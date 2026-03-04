@@ -23,11 +23,11 @@ namespace fs = std::filesystem;
 
 int main(int argc, char *argv[]) {
     
-    int C_first = 260; // Module integration range
-    int C_last = 460;  // Module integration range
+    int C_first = 240; // Module integration range
+    int C_last = 450;  // Module integration range
 
-    int S_first = 270; // Module integration range
-    int S_last = 630;  // Module integration range
+    int S_first = 260; // Module integration range
+    int S_last = 550;  // Module integration range
 
     int M5T3C_first = 240; // M5T3 integration range
     int M5T3C_last =  440; // M5T3 integration range
@@ -41,11 +41,11 @@ int main(int argc, char *argv[]) {
     int CC2_peak_first = 620; // Peak search range
     int CC2_peak_last  = 850; // Peak search range
     
-    int PS_first = 210; // PS integration range
-    int PS_last  = 310; // PS integration range
+    int PS_first = 200; // PS integration range
+    int PS_last  = 320; // PS integration range
     
-    int MC_first = 700; // MC integration range
-    int MC_last  = 800; // MC integration range
+    int MC_first = 650; // MC integration range
+    int MC_last  = 850; // MC integration range
     
     int TC_first = 300; // TC peak search range
     int TC_last  = 450; // TC peak search range
@@ -57,59 +57,60 @@ int main(int argc, char *argv[]) {
     float cut_CC1  = 60.;   // PID cut for CC1 (PeakADC)
     float cut_CC2  = 100.;  // PID cut for CC2 (PeakADC)
     
-    float cut_PS = 600.; // PID cut for PS (PeakADC)
-    float cut_MC = 35.;   // PID cut for MC (PeakADC)
+    float cut_PS = 424.; // PID cut for PS (PeakADC)
+    float cut_MC = 38.;   // PID cut for MC (PeakADC)
     
     float cut_DWC = 4; // Beam geometry cut for DWC
     
     // Scaled factor for each channel
-    float scaleFactor_C = 0.715556624188507; // Using M5T1 C ch with fitting result (99.2%, 59.52 GeV)
-    float scaleFactor_S = 0.720145190562613; // Using M5T1 S ch with fitting result (99.2%, 59.52 GeV)
+    float scaleFactor_C = 0.9565; // Using M5T1 C ch with fitting result (99.2%, 59.52 GeV)
+    float scaleFactor_S = 0.9843; // Using M5T1 S ch with fitting result (99.2%, 59.52 GeV)
     
-    float calib_M1_T1_C = 0.00078453;  float calib_M1_T1_S = 0.000585989;
-    float calib_M1_T2_C = 0.00084207;  float calib_M1_T2_S = 0.000568306;
-    float calib_M1_T3_C = 0.000867149; float calib_M1_T3_S = 0.000543404;
-    float calib_M1_T4_C = 0.000834991; float calib_M1_T4_S = 0.000539562;
-    
-    float calib_M2_T1_C = 0.000848428; float calib_M2_T1_S = 0.000547405;
-    float calib_M2_T2_C = 0.000808373; float calib_M2_T2_S = 0.000551396;
-    float calib_M2_T3_C = 0.000868482; float calib_M2_T3_S = 0.000558809;
-    float calib_M2_T4_C = 0.000838933; float calib_M2_T4_S = 0.000557095;
-    
-    float calib_M3_T1_C = 0.000810316; float calib_M3_T1_S = 0.000557539;
-    float calib_M3_T2_C = 0.000833405; float calib_M3_T2_S = 0.000543461;
-    float calib_M3_T3_C = 0.000834313; float calib_M3_T3_S = 0.000553308;
-    float calib_M3_T4_C = 0.000821823; float calib_M3_T4_S = 0.000554951;
-    
-    float calib_M4_T1_C = 0.000843136; float calib_M4_T1_S = 0.00055699;
-    float calib_M4_T2_C = 0.000870497; float calib_M4_T2_S = 0.000551338;
-    float calib_M4_T3_C = 0.000854835; float calib_M4_T3_S = 0.000571568;
-    float calib_M4_T4_C = 0.0008178;   float calib_M4_T4_S = 0.000558508;
-    
-    float calib_M5_T1_C = 0.00083857;  float calib_M5_T1_S = 0.000509191;
-    float calib_M5_T2_C = 0.000853283; float calib_M5_T2_S = 0.000484335;
-    float calib_M5_T3_C = 0.00120648;  float calib_M5_T3_S = 0.000815634;
-    float calib_M5_T4_C = 0.000804745; float calib_M5_T4_S = 0.000525783;
-    
-    float calib_M6_T1_C = 0.000825544; float calib_M6_T1_S = 0.0006027;
-    float calib_M6_T2_C = 0.000824885; float calib_M6_T2_S = 0.000569894;
-    float calib_M6_T3_C = 0.000823732; float calib_M6_T3_S = 0.000580461;
-    float calib_M6_T4_C = 0.000837925; float calib_M6_T4_S = 0.000602359;
-    
-    float calib_M7_T1_C = 0.000825026; float calib_M7_T1_S = 0.000508376;
-    float calib_M7_T2_C = 0.00083976;  float calib_M7_T2_S = 0.000568359;
-    float calib_M7_T3_C = 0.000861123; float calib_M7_T3_S = 0.000551702;
-    float calib_M7_T4_C = 0.000856161; float calib_M7_T4_S = 0.000560868;
-    
-    float calib_M8_T1_C = 0.0008399;   float calib_M8_T1_S = 0.000559943;
-    float calib_M8_T2_C = 0.000850322; float calib_M8_T2_S = 0.000536712;
-    float calib_M8_T3_C = 0.000856512; float calib_M8_T3_S = 0.000565146;
-    float calib_M8_T4_C = 0.000826156; float calib_M8_T4_S = 0.000540112;
-    
-    float calib_M9_T1_C = 0.000784319; float calib_M9_T1_S = 0.000577517;
-    float calib_M9_T2_C = 0.000849001; float calib_M9_T2_S = 0.000565719;
-    float calib_M9_T3_C = 0.000835942; float calib_M9_T3_S = 0.000584969;
-    float calib_M9_T4_C = 0.000789568; float calib_M9_T4_S = 0.000599671;
+
+    float calib_M1_T1_C = 0.001311; float calib_M1_T1_S = 0.000663;
+    float calib_M1_T2_C = 0.001319; float calib_M1_T2_S = 0.000654;
+    float calib_M1_T3_C = 0.001355; float calib_M1_T3_S = 0.000689;
+    float calib_M1_T4_C = 0.001313; float calib_M1_T4_S = 0.000694;
+
+    float calib_M2_T1_C = 0.001215; float calib_M2_T1_S = 0.000658;
+    float calib_M2_T2_C = 0.001317; float calib_M2_T2_S = 0.000657;
+    float calib_M2_T3_C = 0.001235; float calib_M2_T3_S = 0.000682;
+    float calib_M2_T4_C = 0.001336; float calib_M2_T4_S = 0.000713;
+
+    float calib_M3_T1_C = 0.001271; float calib_M3_T1_S = 0.000658;
+    float calib_M3_T2_C = 0.001412; float calib_M3_T2_S = 0.000681;
+    float calib_M3_T3_C = 0.001365; float calib_M3_T3_S = 0.000677;
+    float calib_M3_T4_C = 0.001355; float calib_M3_T4_S = 0.000703;
+
+    float calib_M4_T1_C = 0.001301; float calib_M4_T1_S = 0.000689;
+    float calib_M4_T2_C = 0.001092; float calib_M4_T2_S = 0.000652;
+    float calib_M4_T3_C = 0.001304; float calib_M4_T3_S = 0.000673;
+    float calib_M4_T4_C = 0.001283; float calib_M4_T4_S = 0.000695;
+
+    float calib_M5_T1_C = 0.001438; float calib_M5_T1_S = 0.000685;
+    float calib_M5_T2_C = 0.001314; float calib_M5_T2_S = 0.000630;
+    float calib_M5_T3_C = 0.001648; float calib_M5_T3_S = 0.000844;
+    float calib_M5_T4_C = 0.001257; float calib_M5_T4_S = 0.000719;
+
+    float calib_M6_T1_C = 0.001354; float calib_M6_T1_S = 0.000700;
+    float calib_M6_T2_C = 0.001244; float calib_M6_T2_S = 0.000694;
+    float calib_M6_T3_C = 0.001387; float calib_M6_T3_S = 0.000710;
+    float calib_M6_T4_C = 0.001457; float calib_M6_T4_S = 0.000726;
+
+    float calib_M7_T1_C = 0.001358; float calib_M7_T1_S = 0.000689;
+    float calib_M7_T2_C = 0.001334; float calib_M7_T2_S = 0.000668;
+    float calib_M7_T3_C = 0.001364; float calib_M7_T3_S = 0.000646;
+    float calib_M7_T4_C = 0.001343; float calib_M7_T4_S = 0.000699;
+                                                                 
+    float calib_M8_T1_C = 0.001389; float calib_M8_T1_S = 0.000683;
+    float calib_M8_T2_C = 0.001331; float calib_M8_T2_S = 0.000654;
+    float calib_M8_T3_C = 0.001320; float calib_M8_T3_S = 0.000668;
+    float calib_M8_T4_C = 0.001335; float calib_M8_T4_S = 0.000695;
+                                                                 
+    float calib_M9_T1_C = 0.001349; float calib_M9_T1_S = 0.000690;
+    float calib_M9_T2_C = 0.001348; float calib_M9_T2_S = 0.000671;
+    float calib_M9_T3_C = 0.001336; float calib_M9_T3_S = 0.000693;
+    float calib_M9_T4_C = 0.001280; float calib_M9_T4_S = 0.000715;
 
     float calib_LC2 = 1.; // Leakage Counter 2
     float calib_LC3 = 1.; // Leakage Counter 3
@@ -146,6 +147,7 @@ int main(int argc, char *argv[]) {
     TH2D* h_DWC2_pos   = (TH2D*) f_DWC->Get("dwc2_pos");
     std::vector<float> DWC1_offset = getDWCoffset(h_DWC1_pos); // DWC1_offset.at(0) == X, DWC1_offset.at(1) == Y
     std::vector<float> DWC2_offset = getDWCoffset(h_DWC2_pos);
+    
     
     // prepare the histograms wa want to draw
     TH1F* hist_M1_T1_C = new TH1F("M1_T1_C" , ";intADC;nEvents", 320, -20000, 300000);
@@ -636,10 +638,11 @@ int main(int argc, char *argv[]) {
     TH2D* hist_DWC_y_corr_after = new TH2D("DWC_y_corr_after", "dwc_y_corr;DWC1_Y_mm;DWC2_Y_mm;events", 480, -120., 120., 480, -120., 120.);
 
     // Get Ntuple
+    //TFile* fNtuple = TFile::Open((TString)("/Users/yhep/DRC/TB2025/analysis/SW/Prompt_ntuple/Prompt_ntuple_Run_" + std::to_string(fRunNum) + ".root"), "READ");
     TFile* fNtuple = TFile::Open((TString)("/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_PromptAnalysis/Prompt_ntuple_Run_" + std::to_string(fRunNum) + ".root"), "READ");
     // Create TTreeReader
     TTreeReader reader("evt", fNtuple);
-    
+
     // Create TTreeReaderValue for all waveform branches
     TTreeReaderValue<std::vector<short>> wave_M1_T1_C(reader, "wave_M1_T1_C"); TTreeReaderValue<std::vector<short>> wave_M1_T1_S(reader, "wave_M1_T1_S");
     TTreeReaderValue<std::vector<short>> wave_M1_T2_C(reader, "wave_M1_T2_C"); TTreeReaderValue<std::vector<short>> wave_M1_T2_S(reader, "wave_M1_T2_S");
@@ -721,95 +724,95 @@ int main(int argc, char *argv[]) {
         std::vector<float> intADC_M9_C; std::vector<float> intADC_M9_S;
 
         // Get IntADC for M1, M2, M3, M4, M5, M6, M7, M8, M9
-        intADC_M1_C.emplace_back( GetInt(*wave_M1_T1_C, C_first, C_last) );
-        intADC_M1_C.emplace_back( GetInt(*wave_M1_T2_C, C_first, C_last) );
-        intADC_M1_C.emplace_back( GetInt(*wave_M1_T3_C, C_first, C_last) );
-        intADC_M1_C.emplace_back( GetInt(*wave_M1_T4_C, C_first, C_last) );
+        intADC_M1_C.emplace_back( GetInt(*wave_M1_T1_C, C_first, C_last) - 25.011 );
+        intADC_M1_C.emplace_back( GetInt(*wave_M1_T2_C, C_first, C_last) - 23.018 );
+        intADC_M1_C.emplace_back( GetInt(*wave_M1_T3_C, C_first, C_last) - 23.531 );
+        intADC_M1_C.emplace_back( GetInt(*wave_M1_T4_C, C_first, C_last) - 24.824 );
 
-        intADC_M2_C.emplace_back( GetInt(*wave_M2_T1_C, C_first, C_last) );
-        intADC_M2_C.emplace_back( GetInt(*wave_M2_T2_C, C_first, C_last) );
-        intADC_M2_C.emplace_back( GetInt(*wave_M2_T3_C, C_first, C_last) );
-        intADC_M2_C.emplace_back( GetInt(*wave_M2_T4_C, C_first, C_last) );
+        intADC_M2_C.emplace_back( GetInt(*wave_M2_T1_C, C_first, C_last) - 20.923 );
+        intADC_M2_C.emplace_back( GetInt(*wave_M2_T2_C, C_first, C_last) - 24.106 );
+        intADC_M2_C.emplace_back( GetInt(*wave_M2_T3_C, C_first, C_last) + 29.658 );
+        intADC_M2_C.emplace_back( GetInt(*wave_M2_T4_C, C_first, C_last) - 24.245 );
 
-        intADC_M3_C.emplace_back( GetInt(*wave_M3_T1_C, C_first, C_last) );
-        intADC_M3_C.emplace_back( GetInt(*wave_M3_T2_C, C_first, C_last) );
-        intADC_M3_C.emplace_back( GetInt(*wave_M3_T3_C, C_first, C_last) );
-        intADC_M3_C.emplace_back( GetInt(*wave_M3_T4_C, C_first, C_last) );
+        intADC_M3_C.emplace_back( GetInt(*wave_M3_T1_C, C_first, C_last) - 10.143 );
+        intADC_M3_C.emplace_back( GetInt(*wave_M3_T2_C, C_first, C_last) - 22.442 );
+        intADC_M3_C.emplace_back( GetInt(*wave_M3_T3_C, C_first, C_last) - 9.764  );
+        intADC_M3_C.emplace_back( GetInt(*wave_M3_T4_C, C_first, C_last) - 14.085 );
 
-        intADC_M4_C.emplace_back( GetInt(*wave_M4_T1_C, C_first, C_last) );
-        intADC_M4_C.emplace_back( GetInt(*wave_M4_T2_C, C_first, C_last) );
-        intADC_M4_C.emplace_back( GetInt(*wave_M4_T3_C, C_first, C_last) );
-        intADC_M4_C.emplace_back( GetInt(*wave_M4_T4_C, C_first, C_last) );
+        intADC_M4_C.emplace_back( GetInt(*wave_M4_T1_C, C_first, C_last) - 24.562 );
+        intADC_M4_C.emplace_back( GetInt(*wave_M4_T2_C, C_first, C_last) - 16.120 );
+        intADC_M4_C.emplace_back( GetInt(*wave_M4_T3_C, C_first, C_last) - 19.742 );
+        intADC_M4_C.emplace_back( GetInt(*wave_M4_T4_C, C_first, C_last) - 21.076 );
         
-        intADC_M5_C.emplace_back( GetInt(*wave_M5_T1_C, C_first, C_last) );
-        intADC_M5_C.emplace_back( GetInt(*wave_M5_T2_C, C_first, C_last) );
-        intADC_M5_C.emplace_back( GetInt(*wave_M5_T3_C, M5T3C_first, M5T3C_last) );
-        intADC_M5_C.emplace_back( GetInt(*wave_M5_T4_C, C_first, C_last) );
+        intADC_M5_C.emplace_back( GetInt(*wave_M5_T1_C, C_first, C_last) - 20.851 );
+        intADC_M5_C.emplace_back( GetInt(*wave_M5_T2_C, C_first, C_last) - 14.347 );
+        intADC_M5_C.emplace_back( GetInt(*wave_M5_T3_C, C_first, C_last) - 21.902 );
+        intADC_M5_C.emplace_back( GetInt(*wave_M5_T4_C, C_first, C_last) - 21.881 );
 
-        intADC_M6_C.emplace_back( GetInt(*wave_M6_T1_C, C_first, C_last) );
-        intADC_M6_C.emplace_back( GetInt(*wave_M6_T2_C, C_first, C_last) );
-        intADC_M6_C.emplace_back( GetInt(*wave_M6_T3_C, C_first, C_last) );
-        intADC_M6_C.emplace_back( GetInt(*wave_M6_T4_C, C_first, C_last) );
+        intADC_M6_C.emplace_back( GetInt(*wave_M6_T1_C, C_first, C_last) - 28.801 );
+        intADC_M6_C.emplace_back( GetInt(*wave_M6_T2_C, C_first, C_last) - 27.128 );
+        intADC_M6_C.emplace_back( GetInt(*wave_M6_T3_C, C_first, C_last) - 17.863 );
+        intADC_M6_C.emplace_back( GetInt(*wave_M6_T4_C, C_first, C_last) - 29.150 );
 
-        intADC_M7_C.emplace_back( GetInt(*wave_M7_T1_C, C_first, C_last) );
-        intADC_M7_C.emplace_back( GetInt(*wave_M7_T2_C, C_first, C_last) );
-        intADC_M7_C.emplace_back( GetInt(*wave_M7_T3_C, C_first, C_last) );
-        intADC_M7_C.emplace_back( GetInt(*wave_M7_T4_C, C_first, C_last) );
+        intADC_M7_C.emplace_back( GetInt(*wave_M7_T1_C, C_first, C_last) - 11.184 );
+        intADC_M7_C.emplace_back( GetInt(*wave_M7_T2_C, C_first, C_last) - 18.546 );
+        intADC_M7_C.emplace_back( GetInt(*wave_M7_T3_C, C_first, C_last) - 15.514 );
+        intADC_M7_C.emplace_back( GetInt(*wave_M7_T4_C, C_first, C_last) - 14.482 );
 
-        intADC_M8_C.emplace_back( GetInt(*wave_M8_T1_C, C_first, C_last) );
-        intADC_M8_C.emplace_back( GetInt(*wave_M8_T2_C, C_first, C_last) );
-        intADC_M8_C.emplace_back( GetInt(*wave_M8_T3_C, C_first, C_last) );
-        intADC_M8_C.emplace_back( GetInt(*wave_M8_T4_C, C_first, C_last) );
+        intADC_M8_C.emplace_back( GetInt(*wave_M8_T1_C, C_first, C_last) - 17.844 );
+        intADC_M8_C.emplace_back( GetInt(*wave_M8_T2_C, C_first, C_last) - 14.656 );
+        intADC_M8_C.emplace_back( GetInt(*wave_M8_T3_C, C_first, C_last) - 11.208 );
+        intADC_M8_C.emplace_back( GetInt(*wave_M8_T4_C, C_first, C_last) - 18.834 );
 
-        intADC_M9_C.emplace_back( GetInt(*wave_M9_T1_C, C_first, C_last) );
-        intADC_M9_C.emplace_back( GetInt(*wave_M9_T2_C, C_first, C_last) );
-        intADC_M9_C.emplace_back( GetInt(*wave_M9_T3_C, C_first, C_last) );
-        intADC_M9_C.emplace_back( GetInt(*wave_M9_T4_C, C_first, C_last) );
+        intADC_M9_C.emplace_back( GetInt(*wave_M9_T1_C, C_first, C_last) + 19.472 );
+        intADC_M9_C.emplace_back( GetInt(*wave_M9_T2_C, C_first, C_last) + 14.126 );
+        intADC_M9_C.emplace_back( GetInt(*wave_M9_T3_C, C_first, C_last) + 20.177 );
+        intADC_M9_C.emplace_back( GetInt(*wave_M9_T4_C, C_first, C_last) - 24.560 );
 
-        intADC_M1_S.emplace_back( GetInt(*wave_M1_T1_S, S_first, S_last) );
-        intADC_M1_S.emplace_back( GetInt(*wave_M1_T2_S, S_first, S_last) );
-        intADC_M1_S.emplace_back( GetInt(*wave_M1_T3_S, S_first, S_last) );
-        intADC_M1_S.emplace_back( GetInt(*wave_M1_T4_S, S_first, S_last) );
+        intADC_M1_S.emplace_back( GetInt(*wave_M1_T1_S, S_first, S_last) - 46.331 );
+        intADC_M1_S.emplace_back( GetInt(*wave_M1_T2_S, S_first, S_last) - 32.844 );
+        intADC_M1_S.emplace_back( GetInt(*wave_M1_T3_S, S_first, S_last) - 41.370 );
+        intADC_M1_S.emplace_back( GetInt(*wave_M1_T4_S, S_first, S_last) - 44.333 );
 
-        intADC_M2_S.emplace_back( GetInt(*wave_M2_T1_S, S_first, S_last) );
-        intADC_M2_S.emplace_back( GetInt(*wave_M2_T2_S, S_first, S_last) );
-        intADC_M2_S.emplace_back( GetInt(*wave_M2_T3_S, S_first, S_last) );
-        intADC_M2_S.emplace_back( GetInt(*wave_M2_T4_S, S_first, S_last) );
+        intADC_M2_S.emplace_back( GetInt(*wave_M2_T1_S, S_first, S_last) - 28.241 );
+        intADC_M2_S.emplace_back( GetInt(*wave_M2_T2_S, S_first, S_last) - 20.340 );
+        intADC_M2_S.emplace_back( GetInt(*wave_M2_T3_S, S_first, S_last) - 30.427 );
+        intADC_M2_S.emplace_back( GetInt(*wave_M2_T4_S, S_first, S_last) - 22.011 );
 
-        intADC_M3_S.emplace_back( GetInt(*wave_M3_T1_S, S_first, S_last) );
-        intADC_M3_S.emplace_back( GetInt(*wave_M3_T2_S, S_first, S_last) );
-        intADC_M3_S.emplace_back( GetInt(*wave_M3_T3_S, S_first, S_last) );
-        intADC_M3_S.emplace_back( GetInt(*wave_M3_T4_S, S_first, S_last) );
+        intADC_M3_S.emplace_back( GetInt(*wave_M3_T1_S, S_first, S_last) - 34.616 );
+        intADC_M3_S.emplace_back( GetInt(*wave_M3_T2_S, S_first, S_last) - 32.893 );
+        intADC_M3_S.emplace_back( GetInt(*wave_M3_T3_S, S_first, S_last) - 44.987 );
+        intADC_M3_S.emplace_back( GetInt(*wave_M3_T4_S, S_first, S_last) - 35.484 );
 
-        intADC_M4_S.emplace_back( GetInt(*wave_M4_T1_S, S_first, S_last) );
-        intADC_M4_S.emplace_back( GetInt(*wave_M4_T2_S, S_first, S_last) );
-        intADC_M4_S.emplace_back( GetInt(*wave_M4_T3_S, S_first, S_last) );
-        intADC_M4_S.emplace_back( GetInt(*wave_M4_T4_S, S_first, S_last) );
+        intADC_M4_S.emplace_back( GetInt(*wave_M4_T1_S, S_first, S_last) - 43.698 );
+        intADC_M4_S.emplace_back( GetInt(*wave_M4_T2_S, S_first, S_last) - 46.151 );
+        intADC_M4_S.emplace_back( GetInt(*wave_M4_T3_S, S_first, S_last) - 48.319 );
+        intADC_M4_S.emplace_back( GetInt(*wave_M4_T4_S, S_first, S_last) - 47.932 );
 
-        intADC_M5_S.emplace_back( GetInt(*wave_M5_T1_S, S_first, S_last) );
-        intADC_M5_S.emplace_back( GetInt(*wave_M5_T2_S, S_first, S_last) );
-        intADC_M5_S.emplace_back( GetInt(*wave_M5_T3_S, M5T3S_first, M5T3S_last) );
-        intADC_M5_S.emplace_back( GetInt(*wave_M5_T4_S, S_first, S_last) );
+        intADC_M5_S.emplace_back( GetInt(*wave_M5_T1_S, S_first, S_last) - 44.896 );
+        intADC_M5_S.emplace_back( GetInt(*wave_M5_T2_S, S_first, S_last) - 44.731 );
+        intADC_M5_S.emplace_back( GetInt(*wave_M5_T3_S, S_first, S_last) - 35.584 );
+        intADC_M5_S.emplace_back( GetInt(*wave_M5_T4_S, S_first, S_last) - 38.281 );
 
-        intADC_M6_S.emplace_back( GetInt(*wave_M6_T1_S, S_first, S_last) );
-        intADC_M6_S.emplace_back( GetInt(*wave_M6_T2_S, S_first, S_last) );
-        intADC_M6_S.emplace_back( GetInt(*wave_M6_T3_S, S_first, S_last) );
-        intADC_M6_S.emplace_back( GetInt(*wave_M6_T4_S, S_first, S_last) );
+        intADC_M6_S.emplace_back( GetInt(*wave_M6_T1_S, S_first, S_last) - 45.593 );
+        intADC_M6_S.emplace_back( GetInt(*wave_M6_T2_S, S_first, S_last) - 38.012 );
+        intADC_M6_S.emplace_back( GetInt(*wave_M6_T3_S, S_first, S_last) - 46.283 );
+        intADC_M6_S.emplace_back( GetInt(*wave_M6_T4_S, S_first, S_last) - 48.131 );
 
-        intADC_M7_S.emplace_back( GetInt(*wave_M7_T1_S, S_first, S_last) );
-        intADC_M7_S.emplace_back( GetInt(*wave_M7_T2_S, S_first, S_last) );
-        intADC_M7_S.emplace_back( GetInt(*wave_M7_T3_S, S_first, S_last) );
-        intADC_M7_S.emplace_back( GetInt(*wave_M7_T4_S, S_first, S_last) );
+        intADC_M7_S.emplace_back( GetInt(*wave_M7_T1_S, S_first, S_last) - 54.016 );
+        intADC_M7_S.emplace_back( GetInt(*wave_M7_T2_S, S_first, S_last) - 42.920 );
+        intADC_M7_S.emplace_back( GetInt(*wave_M7_T3_S, S_first, S_last) - 52.143 );
+        intADC_M7_S.emplace_back( GetInt(*wave_M7_T4_S, S_first, S_last) - 55.587 );
 
-        intADC_M8_S.emplace_back( GetInt(*wave_M8_T1_S, S_first, S_last) );
-        intADC_M8_S.emplace_back( GetInt(*wave_M8_T2_S, S_first, S_last) );
-        intADC_M8_S.emplace_back( GetInt(*wave_M8_T3_S, S_first, S_last) );
-        intADC_M8_S.emplace_back( GetInt(*wave_M8_T4_S, S_first, S_last) );
+        intADC_M8_S.emplace_back( GetInt(*wave_M8_T1_S, S_first, S_last) - 33.003 );
+        intADC_M8_S.emplace_back( GetInt(*wave_M8_T2_S, S_first, S_last) - 25.510 );
+        intADC_M8_S.emplace_back( GetInt(*wave_M8_T3_S, S_first, S_last) - 20.583 );
+        intADC_M8_S.emplace_back( GetInt(*wave_M8_T4_S, S_first, S_last) - 11.093 );
 
-        intADC_M9_S.emplace_back( GetInt(*wave_M9_T1_S, S_first, S_last) );
-        intADC_M9_S.emplace_back( GetInt(*wave_M9_T2_S, S_first, S_last) );
-        intADC_M9_S.emplace_back( GetInt(*wave_M9_T3_S, S_first, S_last) );
-        intADC_M9_S.emplace_back( GetInt(*wave_M9_T4_S, S_first, S_last) );
+        intADC_M9_S.emplace_back( GetInt(*wave_M9_T1_S, S_first, S_last) - 36.088 );
+        intADC_M9_S.emplace_back( GetInt(*wave_M9_T2_S, S_first, S_last) - 39.754 );
+        intADC_M9_S.emplace_back( GetInt(*wave_M9_T3_S, S_first, S_last) - 51.707 );
+        intADC_M9_S.emplace_back( GetInt(*wave_M9_T4_S, S_first, S_last) - 37.377 );
 
         float signal_CC1 = GetPeak(*wave_CC1, CC1_peak_first, CC1_peak_last); // PeakADC
         float signal_CC2 = GetPeak(*wave_CC2, CC2_peak_first, CC2_peak_last); // PeakADC
@@ -876,82 +879,82 @@ int main(int argc, char *argv[]) {
         float Edep_M1T2_C = (intADC_M1_C.at(1) * calib_M1_T2_C);
         float Edep_M1T3_C = (intADC_M1_C.at(2) * calib_M1_T3_C);
         float Edep_M1T4_C = (intADC_M1_C.at(3) * calib_M1_T4_C);
-        if (Edep_M1T1_C < 0) Edep_M1T1_C = 0;
-        if (Edep_M1T2_C < 0) Edep_M1T2_C = 0;
-        if (Edep_M1T3_C < 0) Edep_M1T3_C = 0;
-        if (Edep_M1T4_C < 0) Edep_M1T4_C = 0;
+        // if (Edep_M1T1_C < 0) Edep_M1T1_C = 0;
+        // if (Edep_M1T2_C < 0) Edep_M1T2_C = 0;
+        // if (Edep_M1T3_C < 0) Edep_M1T3_C = 0;
+        // if (Edep_M1T4_C < 0) Edep_M1T4_C = 0;
         
         float Edep_M2T1_C = (intADC_M2_C.at(0) * calib_M2_T1_C);
         float Edep_M2T2_C = (intADC_M2_C.at(1) * calib_M2_T2_C);
         float Edep_M2T3_C = (intADC_M2_C.at(2) * calib_M2_T3_C);
         float Edep_M2T4_C = (intADC_M2_C.at(3) * calib_M2_T4_C);
-        if (Edep_M2T1_C < 0) Edep_M2T1_C = 0;
-        if (Edep_M2T2_C < 0) Edep_M2T2_C = 0;
-        if (Edep_M2T3_C < 0) Edep_M2T3_C = 0;
-        if (Edep_M2T4_C < 0) Edep_M2T4_C = 0;
+        // if (Edep_M2T1_C < 0) Edep_M2T1_C = 0;
+        // if (Edep_M2T2_C < 0) Edep_M2T2_C = 0;
+        // if (Edep_M2T3_C < 0) Edep_M2T3_C = 0;
+        // if (Edep_M2T4_C < 0) Edep_M2T4_C = 0;
         
         float Edep_M3T1_C = (intADC_M3_C.at(0) * calib_M3_T1_C);
         float Edep_M3T2_C = (intADC_M3_C.at(1) * calib_M3_T2_C);
         float Edep_M3T3_C = (intADC_M3_C.at(2) * calib_M3_T3_C);
         float Edep_M3T4_C = (intADC_M3_C.at(3) * calib_M3_T4_C);
-        if (Edep_M3T1_C < 0) Edep_M3T1_C = 0;
-        if (Edep_M3T2_C < 0) Edep_M3T2_C = 0;
-        if (Edep_M3T3_C < 0) Edep_M3T3_C = 0;
-        if (Edep_M3T4_C < 0) Edep_M3T4_C = 0;
+        // if (Edep_M3T1_C < 0) Edep_M3T1_C = 0;
+        // if (Edep_M3T2_C < 0) Edep_M3T2_C = 0;
+        // if (Edep_M3T3_C < 0) Edep_M3T3_C = 0;
+        // if (Edep_M3T4_C < 0) Edep_M3T4_C = 0;
         
         float Edep_M4T1_C = (intADC_M4_C.at(0) * calib_M4_T1_C);
         float Edep_M4T2_C = (intADC_M4_C.at(1) * calib_M4_T2_C);
         float Edep_M4T3_C = (intADC_M4_C.at(2) * calib_M4_T3_C);
         float Edep_M4T4_C = (intADC_M4_C.at(3) * calib_M4_T4_C);
-        if (Edep_M4T1_C < 0) Edep_M4T1_C = 0;
-        if (Edep_M4T2_C < 0) Edep_M4T2_C = 0;
-        if (Edep_M4T3_C < 0) Edep_M4T3_C = 0;
-        if (Edep_M4T4_C < 0) Edep_M4T4_C = 0;
+        // if (Edep_M4T1_C < 0) Edep_M4T1_C = 0;
+        // if (Edep_M4T2_C < 0) Edep_M4T2_C = 0;
+        // if (Edep_M4T3_C < 0) Edep_M4T3_C = 0;
+        // if (Edep_M4T4_C < 0) Edep_M4T4_C = 0;
         
         float Edep_M5T1_C = (intADC_M5_C.at(0) * calib_M5_T1_C);
         float Edep_M5T2_C = (intADC_M5_C.at(1) * calib_M5_T2_C);
         float Edep_M5T3_C = (intADC_M5_C.at(2) * calib_M5_T3_C);
         float Edep_M5T4_C = (intADC_M5_C.at(3) * calib_M5_T4_C);
-        if (Edep_M5T1_C < 0) Edep_M5T1_C = 0;
-        if (Edep_M5T2_C < 0) Edep_M5T2_C = 0;
-        if (Edep_M5T3_C < 0) Edep_M5T3_C = 0;
-        if (Edep_M5T4_C < 0) Edep_M5T4_C = 0;
+        // if (Edep_M5T1_C < 0) Edep_M5T1_C = 0;
+        // if (Edep_M5T2_C < 0) Edep_M5T2_C = 0;
+        // if (Edep_M5T3_C < 0) Edep_M5T3_C = 0;
+        // if (Edep_M5T4_C < 0) Edep_M5T4_C = 0;
         
         float Edep_M6T1_C = (intADC_M6_C.at(0) * calib_M6_T1_C);
         float Edep_M6T2_C = (intADC_M6_C.at(1) * calib_M6_T2_C);
         float Edep_M6T3_C = (intADC_M6_C.at(2) * calib_M6_T3_C);
         float Edep_M6T4_C = (intADC_M6_C.at(3) * calib_M6_T4_C);
-        if (Edep_M6T1_C < 0) Edep_M6T1_C = 0;
-        if (Edep_M6T2_C < 0) Edep_M6T2_C = 0;
-        if (Edep_M6T3_C < 0) Edep_M6T3_C = 0;
-        if (Edep_M6T4_C < 0) Edep_M6T4_C = 0;
+        // if (Edep_M6T1_C < 0) Edep_M6T1_C = 0;
+        // if (Edep_M6T2_C < 0) Edep_M6T2_C = 0;
+        // if (Edep_M6T3_C < 0) Edep_M6T3_C = 0;
+        // if (Edep_M6T4_C < 0) Edep_M6T4_C = 0;
         
         float Edep_M7T1_C = (intADC_M7_C.at(0) * calib_M7_T1_C);
         float Edep_M7T2_C = (intADC_M7_C.at(1) * calib_M7_T2_C);
         float Edep_M7T3_C = (intADC_M7_C.at(2) * calib_M7_T3_C);
         float Edep_M7T4_C = (intADC_M7_C.at(3) * calib_M7_T4_C);
-        if (Edep_M7T1_C < 0) Edep_M7T1_C = 0;
-        if (Edep_M7T2_C < 0) Edep_M7T2_C = 0;
-        if (Edep_M7T3_C < 0) Edep_M7T3_C = 0;
-        if (Edep_M7T4_C < 0) Edep_M7T4_C = 0;
+        // if (Edep_M7T1_C < 0) Edep_M7T1_C = 0;
+        // if (Edep_M7T2_C < 0) Edep_M7T2_C = 0;
+        // if (Edep_M7T3_C < 0) Edep_M7T3_C = 0;
+        // if (Edep_M7T4_C < 0) Edep_M7T4_C = 0;
         
         float Edep_M8T1_C = (intADC_M8_C.at(0) * calib_M8_T1_C);
         float Edep_M8T2_C = (intADC_M8_C.at(1) * calib_M8_T2_C);
         float Edep_M8T3_C = (intADC_M8_C.at(2) * calib_M8_T3_C);
         float Edep_M8T4_C = (intADC_M8_C.at(3) * calib_M8_T4_C);
-        if (Edep_M8T1_C < 0) Edep_M8T1_C = 0;
-        if (Edep_M8T2_C < 0) Edep_M8T2_C = 0;
-        if (Edep_M8T3_C < 0) Edep_M8T3_C = 0;
-        if (Edep_M8T4_C < 0) Edep_M8T4_C = 0;
+        // if (Edep_M8T1_C < 0) Edep_M8T1_C = 0;
+        // if (Edep_M8T2_C < 0) Edep_M8T2_C = 0;
+        // if (Edep_M8T3_C < 0) Edep_M8T3_C = 0;
+        // if (Edep_M8T4_C < 0) Edep_M8T4_C = 0;
         
         float Edep_M9T1_C = (intADC_M9_C.at(0) * calib_M9_T1_C);
         float Edep_M9T2_C = (intADC_M9_C.at(1) * calib_M9_T2_C);
         float Edep_M9T3_C = (intADC_M9_C.at(2) * calib_M9_T3_C);
         float Edep_M9T4_C = (intADC_M9_C.at(3) * calib_M9_T4_C);
-        if (Edep_M9T1_C < 0) Edep_M9T1_C = 0;
-        if (Edep_M9T2_C < 0) Edep_M9T2_C = 0;
-        if (Edep_M9T3_C < 0) Edep_M9T3_C = 0;
-        if (Edep_M9T4_C < 0) Edep_M9T4_C = 0;
+        // if (Edep_M9T1_C < 0) Edep_M9T1_C = 0;
+        // if (Edep_M9T2_C < 0) Edep_M9T2_C = 0;
+        // if (Edep_M9T3_C < 0) Edep_M9T3_C = 0;
+        // if (Edep_M9T4_C < 0) Edep_M9T4_C = 0;
         
         float Edep_M1_C = Edep_M1T1_C + Edep_M1T2_C + Edep_M1T3_C + Edep_M1T4_C;
         float Edep_M2_C = Edep_M2T1_C + Edep_M2T2_C + Edep_M2T3_C + Edep_M2T4_C;
@@ -977,82 +980,82 @@ int main(int argc, char *argv[]) {
         float Edep_M1T2_S = (intADC_M1_S.at(1) * calib_M1_T2_S);
         float Edep_M1T3_S = (intADC_M1_S.at(2) * calib_M1_T3_S);
         float Edep_M1T4_S = (intADC_M1_S.at(3) * calib_M1_T4_S);
-        if (Edep_M1T1_S < 0) Edep_M1T1_S = 0;
-        if (Edep_M1T2_S < 0) Edep_M1T2_S = 0;
-        if (Edep_M1T3_S < 0) Edep_M1T3_S = 0;
-        if (Edep_M1T4_S < 0) Edep_M1T4_S = 0;
+        // if (Edep_M1T1_S < 0) Edep_M1T1_S = 0;
+        // if (Edep_M1T2_S < 0) Edep_M1T2_S = 0;
+        // if (Edep_M1T3_S < 0) Edep_M1T3_S = 0;
+        // if (Edep_M1T4_S < 0) Edep_M1T4_S = 0;
         
         float Edep_M2T1_S = (intADC_M2_S.at(0) * calib_M2_T1_S);
         float Edep_M2T2_S = (intADC_M2_S.at(1) * calib_M2_T2_S);
         float Edep_M2T3_S = (intADC_M2_S.at(2) * calib_M2_T3_S);
         float Edep_M2T4_S = (intADC_M2_S.at(3) * calib_M2_T4_S);
-        if (Edep_M2T1_S < 0) Edep_M2T1_S = 0;
-        if (Edep_M2T2_S < 0) Edep_M2T2_S = 0;
-        if (Edep_M2T3_S < 0) Edep_M2T3_S = 0;
-        if (Edep_M2T4_S < 0) Edep_M2T4_S = 0;
+        // if (Edep_M2T1_S < 0) Edep_M2T1_S = 0;
+        // if (Edep_M2T2_S < 0) Edep_M2T2_S = 0;
+        // if (Edep_M2T3_S < 0) Edep_M2T3_S = 0;
+        // if (Edep_M2T4_S < 0) Edep_M2T4_S = 0;
         
         float Edep_M3T1_S = (intADC_M3_S.at(0) * calib_M3_T1_S);
         float Edep_M3T2_S = (intADC_M3_S.at(1) * calib_M3_T2_S);
         float Edep_M3T3_S = (intADC_M3_S.at(2) * calib_M3_T3_S);
         float Edep_M3T4_S = (intADC_M3_S.at(3) * calib_M3_T4_S);
-        if (Edep_M3T1_S < 0) Edep_M3T1_S = 0;
-        if (Edep_M3T2_S < 0) Edep_M3T2_S = 0;
-        if (Edep_M3T3_S < 0) Edep_M3T3_S = 0;
-        if (Edep_M3T4_S < 0) Edep_M3T4_S = 0;
+        // if (Edep_M3T1_S < 0) Edep_M3T1_S = 0;
+        // if (Edep_M3T2_S < 0) Edep_M3T2_S = 0;
+        // if (Edep_M3T3_S < 0) Edep_M3T3_S = 0;
+        // if (Edep_M3T4_S < 0) Edep_M3T4_S = 0;
         
         float Edep_M4T1_S = (intADC_M4_S.at(0) * calib_M4_T1_S);
         float Edep_M4T2_S = (intADC_M4_S.at(1) * calib_M4_T2_S);
         float Edep_M4T3_S = (intADC_M4_S.at(2) * calib_M4_T3_S);
         float Edep_M4T4_S = (intADC_M4_S.at(3) * calib_M4_T4_S);
-        if (Edep_M4T1_S < 0) Edep_M4T1_S = 0;
-        if (Edep_M4T2_S < 0) Edep_M4T2_S = 0;
-        if (Edep_M4T3_S < 0) Edep_M4T3_S = 0;
-        if (Edep_M4T4_S < 0) Edep_M4T4_S = 0;
+        // if (Edep_M4T1_S < 0) Edep_M4T1_S = 0;
+        // if (Edep_M4T2_S < 0) Edep_M4T2_S = 0;
+        // if (Edep_M4T3_S < 0) Edep_M4T3_S = 0;
+        // if (Edep_M4T4_S < 0) Edep_M4T4_S = 0;
         
         float Edep_M5T1_S = (intADC_M5_S.at(0) * calib_M5_T1_S);
         float Edep_M5T2_S = (intADC_M5_S.at(1) * calib_M5_T2_S);
         float Edep_M5T3_S = (intADC_M5_S.at(2) * calib_M5_T3_S);
         float Edep_M5T4_S = (intADC_M5_S.at(3) * calib_M5_T4_S);
-        if (Edep_M5T1_S < 0) Edep_M5T1_S = 0;
-        if (Edep_M5T2_S < 0) Edep_M5T2_S = 0;
-        if (Edep_M5T3_S < 0) Edep_M5T3_S = 0;
-        if (Edep_M5T4_S < 0) Edep_M5T4_S = 0;
+        // if (Edep_M5T1_S < 0) Edep_M5T1_S = 0;
+        // if (Edep_M5T2_S < 0) Edep_M5T2_S = 0;
+        // if (Edep_M5T3_S < 0) Edep_M5T3_S = 0;
+        // if (Edep_M5T4_S < 0) Edep_M5T4_S = 0;
         
         float Edep_M6T1_S = (intADC_M6_S.at(0) * calib_M6_T1_S);
         float Edep_M6T2_S = (intADC_M6_S.at(1) * calib_M6_T2_S);
         float Edep_M6T3_S = (intADC_M6_S.at(2) * calib_M6_T3_S);
         float Edep_M6T4_S = (intADC_M6_S.at(3) * calib_M6_T4_S);
-        if (Edep_M6T1_S < 0) Edep_M6T1_S = 0;
-        if (Edep_M6T2_S < 0) Edep_M6T2_S = 0;
-        if (Edep_M6T3_S < 0) Edep_M6T3_S = 0;
-        if (Edep_M6T4_S < 0) Edep_M6T4_S = 0;
+        // if (Edep_M6T1_S < 0) Edep_M6T1_S = 0;
+        // if (Edep_M6T2_S < 0) Edep_M6T2_S = 0;
+        // if (Edep_M6T3_S < 0) Edep_M6T3_S = 0;
+        // if (Edep_M6T4_S < 0) Edep_M6T4_S = 0;
         
         float Edep_M7T1_S = (intADC_M7_S.at(0) * calib_M7_T1_S);
         float Edep_M7T2_S = (intADC_M7_S.at(1) * calib_M7_T2_S);
         float Edep_M7T3_S = (intADC_M7_S.at(2) * calib_M7_T3_S);
         float Edep_M7T4_S = (intADC_M7_S.at(3) * calib_M7_T4_S);
-        if (Edep_M7T1_S < 0) Edep_M7T1_S = 0;
-        if (Edep_M7T2_S < 0) Edep_M7T2_S = 0;
-        if (Edep_M7T3_S < 0) Edep_M7T3_S = 0;
-        if (Edep_M7T4_S < 0) Edep_M7T4_S = 0;
+        // if (Edep_M7T1_S < 0) Edep_M7T1_S = 0;
+        // if (Edep_M7T2_S < 0) Edep_M7T2_S = 0;
+        // if (Edep_M7T3_S < 0) Edep_M7T3_S = 0;
+        // if (Edep_M7T4_S < 0) Edep_M7T4_S = 0;
         
         float Edep_M8T1_S = (intADC_M8_S.at(0) * calib_M8_T1_S);
         float Edep_M8T2_S = (intADC_M8_S.at(1) * calib_M8_T2_S);
         float Edep_M8T3_S = (intADC_M8_S.at(2) * calib_M8_T3_S);
         float Edep_M8T4_S = (intADC_M8_S.at(3) * calib_M8_T4_S);
-        if (Edep_M8T1_S < 0) Edep_M8T1_S = 0;
-        if (Edep_M8T2_S < 0) Edep_M8T2_S = 0;
-        if (Edep_M8T3_S < 0) Edep_M8T3_S = 0;
-        if (Edep_M8T4_S < 0) Edep_M8T4_S = 0;
+        // if (Edep_M8T1_S < 0) Edep_M8T1_S = 0;
+        // if (Edep_M8T2_S < 0) Edep_M8T2_S = 0;
+        // if (Edep_M8T3_S < 0) Edep_M8T3_S = 0;
+        // if (Edep_M8T4_S < 0) Edep_M8T4_S = 0;
         
         float Edep_M9T1_S = (intADC_M9_S.at(0) * calib_M9_T1_S);
         float Edep_M9T2_S = (intADC_M9_S.at(1) * calib_M9_T2_S);
         float Edep_M9T3_S = (intADC_M9_S.at(2) * calib_M9_T3_S);
         float Edep_M9T4_S = (intADC_M9_S.at(3) * calib_M9_T4_S);
-        if (Edep_M9T1_S < 0) Edep_M9T1_S = 0;
-        if (Edep_M9T2_S < 0) Edep_M9T2_S = 0;
-        if (Edep_M9T3_S < 0) Edep_M9T3_S = 0;
-        if (Edep_M9T4_S < 0) Edep_M9T4_S = 0;
+        // if (Edep_M9T1_S < 0) Edep_M9T1_S = 0;
+        // if (Edep_M9T2_S < 0) Edep_M9T2_S = 0;
+        // if (Edep_M9T3_S < 0) Edep_M9T3_S = 0;
+        // if (Edep_M9T4_S < 0) Edep_M9T4_S = 0;
         
         float Edep_M1_S = Edep_M1T1_S + Edep_M1T2_S + Edep_M1T3_S + Edep_M1T4_S;
         float Edep_M2_S = Edep_M2T1_S + Edep_M2T2_S + Edep_M2T3_S + Edep_M2T4_S;
@@ -1275,71 +1278,6 @@ int main(int argc, char *argv[]) {
         hist_Edep_M9_T2_S->Fill(Edep_M9T2_S);
         hist_Edep_M9_T3_S->Fill(Edep_M9T3_S);
         hist_Edep_M9_T4_S->Fill(Edep_M9T4_S);
-        
-        hist_Edep_M1_C_after->Fill(Edep_M1_C);
-        hist_Edep_M2_C_after->Fill(Edep_M2_C);
-        hist_Edep_M3_C_after->Fill(Edep_M3_C);
-        hist_Edep_M4_C_after->Fill(Edep_M4_C);
-        hist_Edep_M5_C_after->Fill(Edep_M5_C);
-        hist_Edep_M6_C_after->Fill(Edep_M6_C);
-        hist_Edep_M7_C_after->Fill(Edep_M7_C);
-        hist_Edep_M8_C_after->Fill(Edep_M8_C);
-        hist_Edep_M9_C_after->Fill(Edep_M9_C);
-        
-        hist_Edep_M1_T1_S_after->Fill(Edep_M1T1_S);
-        hist_Edep_M1_T2_S_after->Fill(Edep_M1T2_S);
-        hist_Edep_M1_T3_S_after->Fill(Edep_M1T3_S);
-        hist_Edep_M1_T4_S_after->Fill(Edep_M1T4_S);
-        
-        hist_Edep_M2_T1_S_after->Fill(Edep_M2T1_S);
-        hist_Edep_M2_T2_S_after->Fill(Edep_M2T2_S);
-        hist_Edep_M2_T3_S_after->Fill(Edep_M2T3_S);
-        hist_Edep_M2_T4_S_after->Fill(Edep_M2T4_S);
-        
-        hist_Edep_M3_T1_S_after->Fill(Edep_M3T1_S);
-        hist_Edep_M3_T2_S_after->Fill(Edep_M3T2_S);
-        hist_Edep_M3_T3_S_after->Fill(Edep_M3T3_S);
-        hist_Edep_M3_T4_S_after->Fill(Edep_M3T4_S);
-        
-        hist_Edep_M4_T1_S_after->Fill(Edep_M4T1_S);
-        hist_Edep_M4_T2_S_after->Fill(Edep_M4T2_S);
-        hist_Edep_M4_T3_S_after->Fill(Edep_M4T3_S);
-        hist_Edep_M4_T4_S_after->Fill(Edep_M4T4_S);
-        
-        hist_Edep_M5_T1_S_after->Fill(Edep_M5T1_S);
-        hist_Edep_M5_T2_S_after->Fill(Edep_M5T2_S);
-        hist_Edep_M5_T3_S_after->Fill(Edep_M5T3_S);
-        hist_Edep_M5_T4_S_after->Fill(Edep_M5T4_S);
-        
-        hist_Edep_M6_T1_S_after->Fill(Edep_M6T1_S);
-        hist_Edep_M6_T2_S_after->Fill(Edep_M6T2_S);
-        hist_Edep_M6_T3_S_after->Fill(Edep_M6T3_S);
-        hist_Edep_M6_T4_S_after->Fill(Edep_M6T4_S);
-        
-        hist_Edep_M7_T1_S_after->Fill(Edep_M7T1_S);
-        hist_Edep_M7_T2_S_after->Fill(Edep_M7T2_S);
-        hist_Edep_M7_T3_S_after->Fill(Edep_M7T3_S);
-        hist_Edep_M7_T4_S_after->Fill(Edep_M7T4_S);
-        
-        hist_Edep_M8_T1_S_after->Fill(Edep_M8T1_S);
-        hist_Edep_M8_T2_S_after->Fill(Edep_M8T2_S);
-        hist_Edep_M8_T3_S_after->Fill(Edep_M8T3_S);
-        hist_Edep_M8_T4_S_after->Fill(Edep_M8T4_S);
-        
-        hist_Edep_M9_T1_S_after->Fill(Edep_M9T1_S);
-        hist_Edep_M9_T2_S_after->Fill(Edep_M9T2_S);
-        hist_Edep_M9_T3_S_after->Fill(Edep_M9T3_S);
-        hist_Edep_M9_T4_S_after->Fill(Edep_M9T4_S);
-        
-        hist_Edep_M1_S_after->Fill(Edep_M1_S);
-        hist_Edep_M2_S_after->Fill(Edep_M2_S);
-        hist_Edep_M3_S_after->Fill(Edep_M3_S);
-        hist_Edep_M4_S_after->Fill(Edep_M4_S);
-        hist_Edep_M5_S_after->Fill(Edep_M5_S);
-        hist_Edep_M6_S_after->Fill(Edep_M6_S);
-        hist_Edep_M7_S_after->Fill(Edep_M7_S);
-        hist_Edep_M8_S_after->Fill(Edep_M8_S);
-        hist_Edep_M9_S_after->Fill(Edep_M9_S);
         
         hist_totalEdep_C   ->Fill(totalEdep_C);
         hist_totalEdep_S   ->Fill(totalEdep_S);
@@ -2148,7 +2086,6 @@ int main(int argc, char *argv[]) {
     hist_DWC2_pos_after  ->Write();
     hist_DWC_x_corr_after->Write();
     hist_DWC_y_corr_after->Write();
-    
     outputRoot->Close();
     
     return 0;

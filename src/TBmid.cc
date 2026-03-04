@@ -4,7 +4,7 @@
 #include <numeric>
 
 TBwaveform::TBwaveform()
-    : channel_(-1), waveform_(0) {}
+    : channel_(-1), waveform_(0),drs_stop_(-1) {}
 
 void TBwaveform::init()
 {
@@ -115,6 +115,11 @@ void TBmidbase::setLocal(int nu, int pa, long long ti)
   local_trig_number_ = nu;
   local_trigger_pattern_ = pa;
   local_trig_time_ = ti;
+}
+
+void TBmidbase::setDRSStop (std::vector<int> drsStop)
+{
+  drs_stop_ = drsStop;
 }
 
 void TBmidbase::print()

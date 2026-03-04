@@ -67,6 +67,32 @@ std::vector<int> myColorPalette {
 // PEDESTAL CALCULATION FUNCTIONS
 //////////////////////////////////////////////////////////////////////////////
 
+std::vector<double> pedcorwave (std::vector<short> waveform, int range){
+	double ped = (double) std::accumulate(waveform.begin() + 1, waveform.begin() + 1 + range, 0.)/range;
+	std::vector<double> pedcor;
+	//std::cout<<ped<<std::endl;
+	for (int i = 0; i < (int)waveform.size(); i++ )
+		pedcor.push_back((double)(ped - waveform.at(i)));
+	return pedcor;
+}
+
+double getTime_frompeak (std::vector<double> pedcorwave, double fraction){
+	int max_idx = max_element(pedcorwave.begin()+1,pedcorwave.begin()+1000)-pedcorwave.begin();
+	double max = *max_element(pedcorwave.begin()+1,pedcorwave.begin()+1000);
+	double time = std::numeric_limits<double>::max();
+	//std::cout<<max_idx<<" | "<<max<<std::endl;
+	for (int i = 0; i<1000; i++){
+		int idx = max_idx - i;
+		if (idx < 0) break;
+		if (pedcorwave.at(idx) < max * fraction){
+			time = idx + (max * fraction - pedcorwave.at(idx))/( pedcorwave.at(idx + 1) - pedcorwave.at(idx));
+			//std::cout<<idx<<" | "<<(max * fraction - pedcorwave.at(idx))/( pedcorwave.at(idx + 1) - pedcorwave.at(idx))<<std::endl;
+			break;
+		}
+	}
+	return time * 0.2;
+}
+
 /**
  * @brief Calculate pedestal (baseline) from beginning of waveform
  * 

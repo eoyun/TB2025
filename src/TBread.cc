@@ -211,6 +211,8 @@ TBmidbase FileController<T>::readMetadata()
   long long coarse_time;
   int itmp;
   long long ltmp;
+  int drs_stop_tmp;
+  std::vector<int> drsStop;
 
   // read header
   fread(data, 1, 64, fRawData);
@@ -318,10 +320,19 @@ TBmidbase FileController<T>::readMetadata()
   coarse_time = coarse_time + ltmp;
   coarse_time = coarse_time * 1000; // get ns
   local_trig_time = fine_time + coarse_time;
+  for (int k=0; k<4;k++){
+    drs_stop_tmp = data[34 + k*2] & 0xFF;
+    itmp = data[35 + k * 2] & 0xFF;
+    itmp = itmp << 8;
+    drs_stop_tmp += itmp;
+    drsStop.push_back(drs_stop_tmp);
+  }
+
 
   auto amid = TBmidbase(tcb_trig_number, run_number, mid);
   amid.setTCB(tcb_trig_type, tcb_trig_number, tcb_trig_time);
   amid.setLocal(local_trig_number, local_trigger_pattern, local_trig_time);
+  amid.setDRSStop(drsStop);
 
   return std::move(amid);
 }
@@ -332,6 +343,7 @@ TBmid<TBwaveform> FileController<T>::ReadWaveformMid()
   const auto base = readMetadata();
 
   short adc[32736];
+  std::vector<int> drs_stop_tmp = base.drs_stop();
 
   // read waveform
   fread(adc, 2, 32736, fRawData);
@@ -346,6 +358,7 @@ TBmid<TBwaveform> FileController<T>::ReadWaveformMid()
   {
     auto awave = TBwaveform();
     awave.setChannel(idx + 1); // WARNING channel number 1 - 32
+    awave.setDRSStop(idx + 1,drs_stop_tmp);
     awave.init();
     waveforms.emplace_back(awave);
   }

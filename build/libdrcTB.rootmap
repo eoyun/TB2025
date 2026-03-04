@@ -1,0 +1,21 @@
+{ decls }
+class TBwaveform;
+template <typename T> class TBmid;
+class TBfastmode;
+template <typename T> class TBevt;
+template <typename T> class TBread;
+
+[ libdrcTB.so ]
+# List of selected classes
+class TBcid
+class TBevt<TBfastmode>
+class TBevt<TBwaveform>
+class TBfastmode
+class TBmid<TBfastmode>
+class TBmid<TBwaveform>
+class TBmidbase
+class TBread<TBfastmode>
+class TBread<TBwaveform>
+class TBwaveform
+header TBdetector.h
+header TBmid.h
