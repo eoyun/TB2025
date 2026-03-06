@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
+#include <map>
 #include "TString.h"
 
 class TBcid
@@ -22,10 +24,19 @@ public:
 
   void print() const;
 
+  static bool LoadCorrectionFactorsFromCSV(const std::string &csvPath);
+  static bool HasCachedCorrection(const TString &name, int patch);
+  static bool GetCachedCorrection(const TString &name, int patch, std::vector<double> &factors);
+
 private:
+  static std::string BuildCorrectionKey(const TString &name, int patch);
+
   int mid_;
   int channel_;
   TString name_;
+
+  static std::map<std::string, std::vector<double>> correctionFactorsCache_;
+  static bool correctionFactorsLoaded_;
 };
 
 class TBdetector
