@@ -101,15 +101,25 @@ bool TBcid::GetCachedCorrection(const TString &name, int patch, std::vector<doub
 {
   factors.clear();
 
-  if (!correctionFactorsLoaded_)
+  const std::vector<double> *cached = GetCachedCorrectionPtr(name, patch);
+  if (cached == nullptr)
     return false;
+
+  factors = *cached;
+  return true;
+}
+
+
+const std::vector<double> *TBcid::GetCachedCorrectionPtr(const TString &name, int patch)
+{
+  if (!correctionFactorsLoaded_)
+    return nullptr;
 
   const auto it = correctionFactorsCache_.find(BuildCorrectionKey(name, patch));
   if (it == correctionFactorsCache_.end())
-    return false;
+    return nullptr;
 
-  factors = it->second;
-  return true;
+  return &(it->second);
 }
 
 TBcid::TBcid(int midin, int channelin)

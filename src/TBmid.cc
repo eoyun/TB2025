@@ -52,31 +52,21 @@ bool EnsureCorrectionLoaded()
 
 std::vector<float> BuildADCcorrectedWaveform(const std::vector<short> &waveform, int drsStop, const TString &name)
 {
-  std::vector<float> result;
-  result.reserve(waveform.size());
-
   if (waveform.empty())
-    return result;
+    return std::vector<float>();
+
+  std::vector<float> result(waveform.begin(), waveform.end());
 
   if (!IsModuleTowerSCName(name))
-  {
-    result.assign(waveform.begin(), waveform.end());
     return result;
-  }
 
   if (!EnsureCorrectionLoaded())
-  {
-    result.assign(waveform.begin(), waveform.end());
     return result;
-  }
 
   const int patchIndex = GetPatchIndex(drsStop);
-  std::vector<double> factors;
-  if (!TBcid::GetCachedCorrection(name, patchIndex, factors) || factors.empty())
-  {
-    result.assign(waveform.begin(), waveform.end());
+  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
+  if (factors == nullptr || factors->empty())
     return result;
-  }
 
   for (size_t j = 0; j < waveform.size(); ++j)
   {
@@ -84,11 +74,8 @@ std::vector<float> BuildADCcorrectedWaveform(const std::vector<short> &waveform,
     if (bin >= 1024)
       bin -= 1024;
 
-    double correction = 0.0;
-    if (bin >= 0 && static_cast<size_t>(bin) < factors.size())
-      correction = factors.at(bin);
-
-    result.push_back(static_cast<float>(waveform.at(j) + correction));
+    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
+      result[j] = static_cast<float>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
   }
 
   return result;
