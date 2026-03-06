@@ -17,6 +17,7 @@ const T TBevt<T>::GetData(const TBcid &cid) const
     if (aMid.second.mid() == cid.mid())
     {
       adata = aMid.second.channel(cid.channel() - 1); // WARNING channel number 1 - 32
+      adata.setName(cid.name());
       break;
     }
   }

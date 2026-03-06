@@ -3,10 +3,10 @@
 #include "TBdetector.h"
 
 TBcid::TBcid(int midin, int channelin)
-    : mid_(midin), channel_(channelin) {}
+    : mid_(midin), channel_(channelin), name_("") {}
 
 TBcid::TBcid()
-    : mid_(0), channel_(0) {}
+    : mid_(0), channel_(0), name_("") {}
 
 bool TBcid::operator<(const TBcid &rh) const
 {
@@ -23,7 +23,7 @@ bool TBcid::operator==(const TBcid &rh) const
 
 void TBcid::print() const
 {
-  std::cout << "TBcid::mid()=" << mid_ << " TBcid::channel()=" << channel_ << std::endl;
+  std::cout << "TBcid::mid()=" << mid_ << " TBcid::channel()=" << channel_ << "TBcid::name()=" <<name().Data() << std::endl;
 }
 
 TBdetector::TBdetector()

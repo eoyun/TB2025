@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include "TString.h"
 
 class TBcid
 {
@@ -16,12 +17,15 @@ public:
 
   int mid() const { return mid_; }
   int channel() const { return channel_; }
+  void setName(const TString &name) {name_ = name; }
+  const TString &name() const {return name_;}
 
   void print() const;
 
 private:
   int mid_;
   int channel_;
+  TString name_;
 };
 
 class TBdetector

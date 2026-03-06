@@ -4,6 +4,12 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include "TString.h"
+
+
+bool LoadCorrectionFactors(const TString& filename,
+                           const TString& targetName,
+                           std::vector<double>& factors);
 
 class TBwaveform
 {
@@ -15,6 +21,8 @@ public:
 
   void setChannel(int ch) { channel_ = ch; }
   int channel() const { return channel_; }
+  void setName(const TString &name) { name_ = name; }
+  const TString &name() const {return name_; }
   void setDRSStop(int ch, std::vector<int> drs_stop) { drs_stop_ = drs_stop.at((int)(ch-1)/8); }
   int drs_stop() const { return drs_stop_; }
 
@@ -24,6 +32,8 @@ public:
   std::vector<float> pedcorrectedWaveform() const;
   float pedcorrectedADC(float ped, int buffer = 24) const;
   float emulfastADC(int rise, int width, int buffer = 24) const;
+  std::vector<float> ADCcorrectedWaveform() const;
+  std::vector<float> ADCpedcorrectedWaveform() const;
 
   void fill(unsigned int bin, short val) { waveform_.at(bin) = val; }
 
@@ -31,6 +41,7 @@ private:
   int channel_;
   std::vector<short> waveform_;
   int drs_stop_;
+  TString name_;
 };
 
 class TBfastmode
@@ -46,11 +57,14 @@ public:
 
   void setChannel(int ch) { channel_ = ch; }
   int channel() const { return channel_; }
+  void setName(const TString &name) { name_= name; }
+  const TString &name() const {return name_; }
 
 private:
   int channel_;
   int adc_;
   int timing_;
+  TString name_;
 };
 
 class TBmidbase

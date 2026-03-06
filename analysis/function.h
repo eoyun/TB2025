@@ -109,6 +109,9 @@ float getPed(std::vector<short> waveform) {
   return std::accumulate( waveform.begin() + 1, waveform.begin() + 101, 0.) / 100.;
 }
 
+float getPed(std::vector<float> waveform) {
+  return std::accumulate( waveform.begin() + 1, waveform.begin() + 101, 0.) / 100.;
+}
 /**
  * @brief Calculate pedestal from end of waveform (alternative method)
  * 
@@ -286,6 +289,15 @@ double GetInt(std::vector<short> waveform, int startBin, int endBin)
   return (std::accumulate(pedCorrectedWave.begin() + startBin, pedCorrectedWave.begin() + endBin, 0.));
 }
 
+double GetInt(std::vector<float> waveform, int startBin, int endBin)
+{
+  double ped = getPed(waveform);
+  std::vector<double> pedCorrectedWave;
+  for (int i = 0; i < waveform.size(); i++)
+    pedCorrectedWave.push_back(ped - waveform.at(i));
+
+  return (std::accumulate(pedCorrectedWave.begin() + startBin, pedCorrectedWave.begin() + endBin, 0.));
+}
 //////////////////////////////////////////////////////////////////////////////
 // PEAK AMPLITUDE FUNCTIONS  
 //////////////////////////////////////////////////////////////////////////////

@@ -1,2 +1,5 @@
-./analysis/*/*.root
+./analysis/test/*.root
 ./analysis/*/*.png
+*.root
+build
+install

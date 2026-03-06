@@ -58,7 +58,9 @@ void TButility::LoadMapping(const std::string &path)
 
 TBcid TButility::GetCID(TString name) const {
   if (mapping_NAME_CID.find(name) == mapping_NAME_CID.end()) return TBcid(-1, -1);
-  else return mapping_NAME_CID.at(name);
+  TBcid cid = mapping_NAME_CID.at(name);
+  cid.setName(name);
+  return cid;
 }
 
 std::string TButility::GetName(TBcid cid) const {

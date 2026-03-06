@@ -1,9 +1,0 @@
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/lib64/libdrcTB.so
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/include/TBdetector.h
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/include/TBevt.h
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/include/TBmid.h
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/include/TBobject.h
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/include/TBread.h
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/include/TButility.h
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/lib64/libdrcTB_rdict.pcm
-/u/user/eoyun/TB2025/25.08.09/TB2025/install/lib64/libdrcTB.rootmap

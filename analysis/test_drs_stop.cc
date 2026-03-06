@@ -22,6 +22,33 @@
 
 namespace fs = std::filesystem;
 
+double mean_range(std::vector<short> waveform, int p00, int p01)
+{
+    int sum = 0;
+    int count = 0;
+    if (p00 > 1023) p00 = p00 - 1024;
+    if (p01 > 1023) p01 = p01 - 1024;
+
+    int idx = p00;
+    int test =0;
+    while (1) {
+        test ++;
+        if (idx >= 1 && idx <= 1000) {
+            sum += waveform.at(idx);
+            count++;
+        }
+        if (test % 200 == 0) std::cout<<"infinity loop : "<<test <<" : "<< idx<< " | p00 "<<p00<<" | p01 "<<p01<<" | "<<waveform.size() <<std::endl;
+        if (idx == p01) break;
+
+        idx++;
+        if (idx == 1024) idx = 0;  // circular wrap
+    }
+
+    if (count == 0) return 0;
+
+    return (double) sum / count;
+}
+
 int main(int argc, char** argv) {
 
     int CC1_peak_first = 650; // Peak search range
@@ -56,17 +83,19 @@ int main(int argc, char** argv) {
     int fMaxEvent = std::stoi(argv[2]);
     int fMaxFile = -1;
 
-    fs::path dir("./test");   
-    if (!(fs::exists(dir))) fs::create_directory(dir);
-    std::string outFile = "./test/drs_stop_Run_" + std::to_string(fRunNum) + ".root";
-    TFile* outputRoot = new TFile(outFile.c_str(), "RECREATE");
     
     TFile* f_DWC = TFile::Open((TString)("./DWC/DWC_Run_" + std::to_string(fRunNum) + ".root"), "READ");
     TH2D* h_DWC1_pos   = (TH2D*) f_DWC->Get("dwc1_pos");
     TH2D* h_DWC2_pos   = (TH2D*) f_DWC->Get("dwc2_pos");
     std::vector<float> DWC1_offset = getDWCoffset(h_DWC1_pos); // DWC1_offset.at(0) == X, DWC1_offset.at(1) == Y
     std::vector<float> DWC2_offset = getDWCoffset(h_DWC2_pos);
+    f_DWC->Close();
     
+    fs::path dir("./test");   
+    if (!(fs::exists(dir))) fs::create_directory(dir);
+    std::string outFile = "./test/drs_stop_Run_" + std::to_string(fRunNum) + ".root";
+    TFile* outputRoot = new TFile(outFile.c_str(), "RECREATE");
+
     TH1F* hist_CC1 = new TH1F("CC1", ";peakADC;Events", 1024, 0, 4096);
     TH1F* hist_CC2 = new TH1F("CC2", ";peakADC;Events", 1024, 0, 4096);
     
@@ -100,7 +129,14 @@ int main(int argc, char** argv) {
     TBcid cid_MC = util.GetCID("MC");
     TBcid cid_TC = util.GetCID("TC");
 
-    TBcid cid_DWC1_L = util.GetCID("")
+    TBcid cid_DWC1_L = util.GetCID("DWC1L");
+    TBcid cid_DWC1_R = util.GetCID("DWC1R");
+    TBcid cid_DWC1_U = util.GetCID("DWC1U");
+    TBcid cid_DWC1_D = util.GetCID("DWC1D");
+    TBcid cid_DWC2_L = util.GetCID("DWC2L");
+    TBcid cid_DWC2_R = util.GetCID("DWC2R");
+    TBcid cid_DWC2_U = util.GetCID("DWC2U");
+    TBcid cid_DWC2_D = util.GetCID("DWC2D");
 
     std::vector<TBcid> S_collector;
     std::vector<TBcid> C_collector;
@@ -162,7 +198,7 @@ int main(int argc, char** argv) {
 
     // MID: 3-7: PMT modules, MID 9: LC, MID 10: Aux(CC1, CC2, PS, TC, MC), MID 12: Triggers (T1, T2, T1NIM, T2NIM, Coin), MID 14-17: MCP micro, MID 18: DWC
     // TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/Volumes/Macintosh HD-1/Users/yhep/scratch/YUdaq", {3, 4, 5, 6, 7, 9, 10, 12, 18});
-    TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_Data/", {3, 4, 5, 6, 7, 10, 12});
+    TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_Data/", {3, 4, 5, 6, 7, 10, 12, 18});
     // Set Maximum event
     if (fMaxEvent == -1)
       fMaxEvent = readerWave.GetMaxEvent();
@@ -176,6 +212,86 @@ int main(int argc, char** argv) {
     for (int iEvt = 0; iEvt < fMaxEvent; iEvt++) {
 	printProgress(iEvt, fMaxEvent);
 	TBevt<TBwaveform> aEvent = readerWave.GetAnEvent();
+	TBwaveform PS_wave = aEvent.GetData(cid_PS);
+	TBwaveform MC_wave = aEvent.GetData(cid_MC);
+	TBwaveform TC_wave = aEvent.GetData(cid_TC);
+	TBwaveform CC1_wave = aEvent.GetData(cid_CC1);
+	TBwaveform CC2_wave = aEvent.GetData(cid_CC2);
+
+	TBwaveform DWC1L_wave = aEvent.GetData(cid_DWC1_L);
+	TBwaveform DWC1R_wave = aEvent.GetData(cid_DWC1_R);
+	TBwaveform DWC1U_wave = aEvent.GetData(cid_DWC1_U);
+	TBwaveform DWC1D_wave = aEvent.GetData(cid_DWC1_D);
+	TBwaveform DWC2L_wave = aEvent.GetData(cid_DWC2_L);
+	TBwaveform DWC2R_wave = aEvent.GetData(cid_DWC2_R);
+	TBwaveform DWC2U_wave = aEvent.GetData(cid_DWC2_U);
+	TBwaveform DWC2D_wave = aEvent.GetData(cid_DWC2_D);
+	
+	std::vector<short> waveform_PS = PS_wave.waveform();	
+	std::vector<short> waveform_MC = MC_wave.waveform();	
+	std::vector<short> waveform_TC = TC_wave.waveform();	
+	std::vector<short> waveform_CC1 = CC1_wave.waveform();	
+	std::vector<short> waveform_CC2 = CC2_wave.waveform();	
+
+	std::vector<short> waveform_DWC1L = DWC1L_wave.waveform();	
+	std::vector<short> waveform_DWC1R = DWC1R_wave.waveform();	
+	std::vector<short> waveform_DWC1U = DWC1U_wave.waveform();	
+	std::vector<short> waveform_DWC1D = DWC1D_wave.waveform();	
+	std::vector<short> waveform_DWC2L = DWC2L_wave.waveform();	
+	std::vector<short> waveform_DWC2R = DWC2R_wave.waveform();	
+	std::vector<short> waveform_DWC2U = DWC2U_wave.waveform();	
+	std::vector<short> waveform_DWC2D = DWC2D_wave.waveform();	
+
+	std::vector<float> DWC1_time;
+        DWC1_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC1R, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 1
+        DWC1_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC1L, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 1
+        DWC1_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC1U, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 1
+        DWC1_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC1D, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 1
+        
+        std::vector<float> DWC2_time;
+        DWC2_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC2R, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 2
+        DWC2_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC2L, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 2
+        DWC2_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC2U, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 2
+        DWC2_time.emplace_back(getLeadingEdgeTime_interpolated800(waveform_DWC2D, 0.4, 1, 1000)); // Get 40% leading Edge Time for DWC 2
+
+	std::vector<float> DWC1_corrected_pos = getDWC1position(DWC1_time, DWC1_offset); // DWC1 X, Y
+        std::vector<float> DWC2_corrected_pos = getDWC2position(DWC2_time, DWC2_offset); // DWC2 X, Y
+
+	double signal_PS = GetPeak(waveform_PS, PS_first, PS_last); // PeakADC
+        double signal_MC = GetPeak(waveform_MC, MC_first, MC_last); // PeakADC
+        double signal_TC = GetPeak(waveform_TC, TC_first, TC_last); // PeakADC
+        double signal_CC1 = GetPeak(waveform_CC1, CC1_peak_first, CC1_peak_last); // PeakADC
+        double signal_CC2 = GetPeak(waveform_CC2, CC2_peak_first, CC2_peak_last); // PeakADC
+
+        hist_CC1->Fill(signal_CC1);
+        hist_CC2->Fill(signal_CC2);
+        
+        hist_PS->Fill(signal_PS);
+        hist_MC->Fill(signal_MC);
+        hist_TC->Fill(signal_TC);
+
+	hist_DWC1_pos_corrected  ->Fill(DWC1_corrected_pos.at(0), DWC1_corrected_pos.at(1));
+        hist_DWC2_pos_corrected  ->Fill(DWC2_corrected_pos.at(0), DWC2_corrected_pos.at(1));
+        hist_DWC_x_corr_corrected->Fill(DWC1_corrected_pos.at(0), DWC2_corrected_pos.at(0));
+        hist_DWC_y_corr_corrected->Fill(DWC1_corrected_pos.at(1), DWC2_corrected_pos.at(1));
+        if ( !(dwcCorrelationCut(DWC1_corrected_pos, DWC2_corrected_pos, cut_DWC)) ) continue;
+	//if ( std::abs(DWC1_corrected_pos.at(0))>5 || std::abs(DWC1_corrected_pos.at(1))>5) continue;
+        //if ( std::abs(DWC2_corrected_pos.at(0))>5 || std::abs(DWC2_corrected_pos.at(1))>5) continue;
+        if ( signal_PS < cut_PS1 || signal_PS > cut_PS2 ) continue; // Select above 3 mip peak
+        if ( signal_MC < cut_MC ) continue; // Select only pedestals
+        
+	hist_CC1_after->Fill(signal_CC1);
+        hist_CC2_after->Fill(signal_CC2);
+        
+        hist_PS_after->Fill(signal_PS);
+        hist_MC_after->Fill(signal_MC);
+        hist_TC_after->Fill(signal_TC);
+
+        hist_DWC1_pos_after  ->Fill(DWC1_corrected_pos.at(0), DWC1_corrected_pos.at(1));
+        hist_DWC2_pos_after  ->Fill(DWC2_corrected_pos.at(0), DWC2_corrected_pos.at(1));
+        hist_DWC_x_corr_after->Fill(DWC1_corrected_pos.at(0), DWC2_corrected_pos.at(0));
+        hist_DWC_y_corr_after->Fill(DWC1_corrected_pos.at(1), DWC2_corrected_pos.at(1));
+
 	for (int i=0;i<36;i++){
 	  TBwaveform S_tmp = aEvent.GetData(S_collector.at(i));
 	  TBwaveform C_tmp = aEvent.GetData(C_collector.at(i));
@@ -185,6 +301,7 @@ int main(int argc, char** argv) {
 
 	  std::vector<short> waveform_S = S_tmp.waveform();
 	  std::vector<short> waveform_C = C_tmp.waveform();
+
 	  int p00_S, p00_C;
 	  int p01_S, p01_C;
 	  int p02_S, p02_C;
@@ -196,91 +313,130 @@ int main(int argc, char** argv) {
 	  int p08_S, p08_C;
 	  int p09_S, p09_C;
 	  int p10_S, p10_C;
+	  int point[11] = {1,94,187,280,373,466,560,653,746,839,932};
 	  p00_S = 1024 - drs_stop_S;
 	  p00_C = 1024 - drs_stop_C;
 	  
-	  if (drs_stop_S > 93) p01_S = 1024 + 93 - drs_stop_S;
-	  else p01_S = 93 - drs_stop_S;
-	  if (drs_stop_C > 93) p01_C = 1024 + 93 - drs_stop_C;
-	  else p01_C = 93 - drs_stop_C;
+	  if (drs_stop_S > point[1]) p01_S = 1024 + point[1] - drs_stop_S;
+	  else p01_S = point[1] - drs_stop_S;
+	  if (drs_stop_C > point[1]) p01_C = 1024 + point[1] - drs_stop_C;
+	  else p01_C = point[1] - drs_stop_C;
 
-	  if (drs_stop_S > 187) p02_S = 1024 + 187 - drs_stop_S;
-	  else p02_S = 187 - drs_stop_S;
-	  if (drs_stop_C > 187) p02_C = 1024 + 187 - drs_stop_C;
-	  else p02_C = 187 - drs_stop_C;
+	  if (drs_stop_S > point[2]) p02_S = 1024 + point[2] - drs_stop_S;
+	  else p02_S = point[2] - drs_stop_S;               
+	  if (drs_stop_C > point[2]) p02_C = 1024 + point[2] - drs_stop_C;
+	  else p02_C = point[2] - drs_stop_C;
 	  
-	  if (drs_stop_S > 280) p03_S = 1024 + 280 - drs_stop_S;
-	  else p03_S = 280 - drs_stop_S;
-	  if (drs_stop_C > 280) p03_C = 1024 + 280 - drs_stop_C;
-	  else p03_C = 280 - drs_stop_C;
+	  if (drs_stop_S > point[3]) p03_S = 1024 + point[3] - drs_stop_S;
+	  else p03_S = point[3] - drs_stop_S;               
+	  if (drs_stop_C > point[3]) p03_C = 1024 + point[3] - drs_stop_C;
+	  else p03_C = point[3] - drs_stop_C;
 	  
-	  if (drs_stop_S > 373) p04_S = 1024 + 373 - drs_stop_S;
-	  else p04_S = 373 - drs_stop_S;
-	  if (drs_stop_C > 373) p04_C = 1024 + 373 - drs_stop_C;
-	  else p04_C = 373 - drs_stop_C;
+	  if (drs_stop_S > point[4]) p04_S = 1024 + point[4] - drs_stop_S;
+	  else p04_S = point[4] - drs_stop_S;               
+	  if (drs_stop_C > point[4]) p04_C = 1024 + point[4] - drs_stop_C;
+	  else p04_C = point[4] - drs_stop_C;
 	  
-	  if (drs_stop_S > 466) p05_S = 1024 + 466 - drs_stop_S;
-	  else p05_S = 466 - drs_stop_S;
-	  if (drs_stop_C > 466) p05_C = 1024 + 466 - drs_stop_C;
-	  else p05_C = 466 - drs_stop_C;
+	  if (drs_stop_S > point[5]) p05_S = 1024 + point[5] - drs_stop_S;
+	  else p05_S = point[5] - drs_stop_S;               
+	  if (drs_stop_C > point[5]) p05_C = 1024 + point[5] - drs_stop_C;
+	  else p05_C = point[5] - drs_stop_C;
 	  
-	  if (drs_stop_S > 560) p06_S = 1024 + 560 - drs_stop_S;
-	  else p06_S = 560 - drs_stop_S;
-	  if (drs_stop_C > 560) p06_C = 1024 + 560 - drs_stop_C;
-	  else p06_C = 560 - drs_stop_C;
+	  if (drs_stop_S > point[6]) p06_S = 1024 + point[6] - drs_stop_S;
+	  else p06_S = point[6] - drs_stop_S;               
+	  if (drs_stop_C > point[6]) p06_C = 1024 + point[6] - drs_stop_C;
+	  else p06_C = point[6] - drs_stop_C;
 	  
-	  if (drs_stop_S > 653) p07_S = 1024 + 653 - drs_stop_S;
-	  else p07_S = 653 - drs_stop_S;
-	  if (drs_stop_C > 653) p07_C = 1024 + 653 - drs_stop_C;
-	  else p07_C = 653 - drs_stop_C;
+	  if (drs_stop_S > point[7]) p07_S = 1024 + point[7] - drs_stop_S;
+	  else p07_S = point[7] - drs_stop_S;               
+	  if (drs_stop_C > point[7]) p07_C = 1024 + point[7] - drs_stop_C;
+	  else p07_C = point[7] - drs_stop_C;
 	  
-	  if (drs_stop_S > 746) p08_S = 1024 + 746 - drs_stop_S;
-	  else p08_S = 746 - drs_stop_S;
-	  if (drs_stop_C > 746) p08_C = 1024 + 746 - drs_stop_C;
-	  else p08_C = 746 - drs_stop_C;
+	  if (drs_stop_S > point[8]) p08_S = 1024 + point[8] - drs_stop_S;
+	  else p08_S = point[8] - drs_stop_S;               
+	  if (drs_stop_C > point[8]) p08_C = 1024 + point[8] - drs_stop_C;
+	  else p08_C = point[8] - drs_stop_C;
 	  
-	  if (drs_stop_S > 839) p09_S = 1024 + 839 - drs_stop_S;
-	  else p09_S = 839 - drs_stop_S;
-	  if (drs_stop_C > 839) p09_C = 1024 + 839 - drs_stop_C;
-	  else p09_C = 839 - drs_stop_C;
+	  if (drs_stop_S > point[9]) p09_S = 1024 + point[9] - drs_stop_S;
+	  else p09_S = point[9] - drs_stop_S;               
+	  if (drs_stop_C > point[9]) p09_C = 1024 + point[9] - drs_stop_C;
+	  else p09_C = point[9] - drs_stop_C;
 	  
-	  if (drs_stop_S > 932) p10_S = 1024 + 932 - drs_stop_S;
-	  else p10_S = 932 - drs_stop_S;
-	  if (drs_stop_C > 932) p10_C = 1024 + 932 - drs_stop_C;
-	  else p10_C = 932 - drs_stop_C;
+	  if (drs_stop_S > point[10]) p10_S = 1024 + point[10] - drs_stop_S;
+	  else p10_S = point[10] - drs_stop_S;               
+	  if (drs_stop_C > point[10]) p10_C = 1024 + point[10] - drs_stop_C;
+	  else p10_C = point[10] - drs_stop_C;
 	  
-	  for (int j = 1; j<1001;j++){
-	    int bin_S;
-	    int bin_C;
-	    if (j + drs_stop_S + 1<1024) bin_S = j + drs_stop_S + 1; 
-	    else bin_S = j + drs_stop_S + 1 - 1024; 
-	    if (j + drs_stop_C + 1<1024) bin_C = j + drs_stop_C + 1; 
-	    else bin_C = j + drs_stop_C + 1 - 1024; 
+	  if ( i != 31){
+	    for (int j = 1; j<1001;j++){
+	      int bin_S;
+	      int bin_C;
+	      if (j + drs_stop_S + 1<1024) bin_S = j + drs_stop_S + 1; 
+	      else bin_S = j + drs_stop_S + 1 - 1024; 
+	      if (j + drs_stop_C + 1<1024) bin_C = j + drs_stop_C + 1; 
+	      else bin_C = j + drs_stop_C + 1 - 1024; 
 
-	    S_hist[i]->Fill(bin_S,waveform_S.at(j));
-	    C_hist[i]->Fill(bin_C,waveform_C.at(j));
-	    if ( p00_S > 0 && p00_S < 1001 ) S_00_hist[i]->Fill(bin_S,waveform_S.at(p00_S)-waveform_S.at(j));
-	    if ( p00_C > 0 && p00_C < 1001 ) C_00_hist[i]->Fill(bin_C,waveform_C.at(p00_C)-waveform_C.at(j));
-	    if ( p01_S > 0 && p01_S < 1001 ) S_01_hist[i]->Fill(bin_S,waveform_S.at(p01_S)-waveform_S.at(j));
-	    if ( p01_C > 0 && p01_C < 1001 ) C_01_hist[i]->Fill(bin_C,waveform_C.at(p01_C)-waveform_C.at(j));
-	    if ( p02_S > 0 && p02_S < 1001 ) S_02_hist[i]->Fill(bin_S,waveform_S.at(p02_S)-waveform_S.at(j));
-	    if ( p02_C > 0 && p02_C < 1001 ) C_02_hist[i]->Fill(bin_C,waveform_C.at(p02_C)-waveform_C.at(j));
-	    if ( p03_S > 0 && p03_S < 1001 ) S_03_hist[i]->Fill(bin_S,waveform_S.at(p03_S)-waveform_S.at(j));
-	    if ( p03_C > 0 && p03_C < 1001 ) C_03_hist[i]->Fill(bin_C,waveform_C.at(p03_C)-waveform_C.at(j));
-	    if ( p04_S > 0 && p04_S < 1001 ) S_04_hist[i]->Fill(bin_S,waveform_S.at(p04_S)-waveform_S.at(j));
-	    if ( p04_C > 0 && p04_C < 1001 ) C_04_hist[i]->Fill(bin_C,waveform_C.at(p04_C)-waveform_C.at(j));
-	    if ( p05_S > 0 && p05_S < 1001 ) S_05_hist[i]->Fill(bin_S,waveform_S.at(p05_S)-waveform_S.at(j));
-	    if ( p05_C > 0 && p05_C < 1001 ) C_05_hist[i]->Fill(bin_C,waveform_C.at(p05_C)-waveform_C.at(j));
-	    if ( p06_S > 0 && p06_S < 1001 ) S_06_hist[i]->Fill(bin_S,waveform_S.at(p06_S)-waveform_S.at(j));
-	    if ( p06_C > 0 && p06_C < 1001 ) C_06_hist[i]->Fill(bin_C,waveform_C.at(p06_C)-waveform_C.at(j));
-	    if ( p07_S > 0 && p07_S < 1001 ) S_07_hist[i]->Fill(bin_S,waveform_S.at(p07_S)-waveform_S.at(j));
-	    if ( p07_C > 0 && p07_C < 1001 ) C_07_hist[i]->Fill(bin_C,waveform_C.at(p07_C)-waveform_C.at(j));
-	    if ( p08_S > 0 && p08_S < 1001 ) S_08_hist[i]->Fill(bin_S,waveform_S.at(p08_S)-waveform_S.at(j));
-	    if ( p08_C > 0 && p08_C < 1001 ) C_08_hist[i]->Fill(bin_C,waveform_C.at(p08_C)-waveform_C.at(j));
-	    if ( p09_S > 0 && p09_S < 1001 ) S_09_hist[i]->Fill(bin_S,waveform_S.at(p09_S)-waveform_S.at(j));
-	    if ( p09_C > 0 && p09_C < 1001 ) C_09_hist[i]->Fill(bin_C,waveform_C.at(p09_C)-waveform_C.at(j));
-	    if ( p10_S > 0 && p10_S < 1001 ) S_10_hist[i]->Fill(bin_S,waveform_S.at(p10_S)-waveform_S.at(j));
-	    if ( p10_C > 0 && p10_C < 1001 ) C_10_hist[i]->Fill(bin_C,waveform_C.at(p10_C)-waveform_C.at(j));
+	      S_hist[i]->Fill(bin_S,waveform_S.at(j));
+	      C_hist[i]->Fill(bin_C,waveform_C.at(j));
+	      if ( p00_S > 0 && p00_S < 1001 ) S_00_hist[i]->Fill(bin_S,mean_range(waveform_S,p00_S,p01_S)-waveform_S.at(j));
+	      if ( p00_C > 0 && p00_C < 1001 ) C_00_hist[i]->Fill(bin_C,mean_range(waveform_C,p00_C,p01_C)-waveform_C.at(j));
+	      if ( p01_S > 0 && p01_S < 1001 ) S_01_hist[i]->Fill(bin_S,mean_range(waveform_S,p01_S,p02_S)-waveform_S.at(j));
+	      if ( p01_C > 0 && p01_C < 1001 ) C_01_hist[i]->Fill(bin_C,mean_range(waveform_C,p01_C,p02_C)-waveform_C.at(j));
+	      if ( p02_S > 0 && p02_S < 1001 ) S_02_hist[i]->Fill(bin_S,mean_range(waveform_S,p02_S,p03_S)-waveform_S.at(j));
+	      if ( p02_C > 0 && p02_C < 1001 ) C_02_hist[i]->Fill(bin_C,mean_range(waveform_C,p02_C,p03_C)-waveform_C.at(j));
+	      if ( p03_S > 0 && p03_S < 1001 ) S_03_hist[i]->Fill(bin_S,mean_range(waveform_S,p03_S,p04_S)-waveform_S.at(j));
+	      if ( p03_C > 0 && p03_C < 1001 ) C_03_hist[i]->Fill(bin_C,mean_range(waveform_C,p03_C,p04_C)-waveform_C.at(j));
+	      if ( p04_S > 0 && p04_S < 1001 ) S_04_hist[i]->Fill(bin_S,mean_range(waveform_S,p04_S,p05_S)-waveform_S.at(j));
+	      if ( p04_C > 0 && p04_C < 1001 ) C_04_hist[i]->Fill(bin_C,mean_range(waveform_C,p04_C,p05_C)-waveform_C.at(j));
+	      if ( p05_S > 0 && p05_S < 1001 ) S_05_hist[i]->Fill(bin_S,mean_range(waveform_S,p05_S,p06_S)-waveform_S.at(j));
+	      if ( p05_C > 0 && p05_C < 1001 ) C_05_hist[i]->Fill(bin_C,mean_range(waveform_C,p05_C,p06_C)-waveform_C.at(j));
+	      if ( p06_S > 0 && p06_S < 1001 ) S_06_hist[i]->Fill(bin_S,mean_range(waveform_S,p06_S,p07_S)-waveform_S.at(j));
+	      if ( p06_C > 0 && p06_C < 1001 ) C_06_hist[i]->Fill(bin_C,mean_range(waveform_C,p06_C,p07_C)-waveform_C.at(j));
+	      if ( p07_S > 0 && p07_S < 1001 ) S_07_hist[i]->Fill(bin_S,mean_range(waveform_S,p07_S,p08_S)-waveform_S.at(j));
+	      if ( p07_C > 0 && p07_C < 1001 ) C_07_hist[i]->Fill(bin_C,mean_range(waveform_C,p07_C,p08_C)-waveform_C.at(j));
+	      if ( p08_S > 0 && p08_S < 1001 ) S_08_hist[i]->Fill(bin_S,mean_range(waveform_S,p08_S,p09_S)-waveform_S.at(j));
+	      if ( p08_C > 0 && p08_C < 1001 ) C_08_hist[i]->Fill(bin_C,mean_range(waveform_C,p08_C,p09_C)-waveform_C.at(j));
+	      if ( p09_S > 0 && p09_S < 1001 ) S_09_hist[i]->Fill(bin_S,mean_range(waveform_S,p09_S,p10_S)-waveform_S.at(j));
+	      if ( p09_C > 0 && p09_C < 1001 ) C_09_hist[i]->Fill(bin_C,mean_range(waveform_C,p09_C,p10_C)-waveform_C.at(j));
+	      if ( p10_S > 0 && p10_S < 1001 ) S_10_hist[i]->Fill(bin_S,mean_range(waveform_S,p10_S,p00_S)-waveform_S.at(j));
+	      if ( p10_C > 0 && p10_C < 1001 ) C_10_hist[i]->Fill(bin_C,mean_range(waveform_C,p10_C,p00_C)-waveform_C.at(j));
+	    }
+	  }
+	  else {
+	    for (int j = 1; j<601;j++){
+	      int bin_S;
+	      int bin_C;
+	      if (j + drs_stop_S + 1<1024) bin_S = j + drs_stop_S + 1; 
+	      else bin_S = j + drs_stop_S + 1 - 1024; 
+	      if (j + drs_stop_C + 1<1024) bin_C = j + drs_stop_C + 1; 
+	      else bin_C = j + drs_stop_C + 1 - 1024; 
+
+	      S_hist[i]->Fill(bin_S,waveform_S.at(j));
+	      C_hist[i]->Fill(bin_C,waveform_C.at(j));
+	      if ( p00_S > 0 && p00_S < 501 ) S_00_hist[i]->Fill(bin_S,mean_range(waveform_S,p00_S,p01_S)-waveform_S.at(j));
+	      if ( p00_C > 0 && p00_C < 501 ) C_00_hist[i]->Fill(bin_C,mean_range(waveform_C,p00_C,p01_C)-waveform_C.at(j));
+	      if ( p01_S > 0 && p01_S < 501 ) S_01_hist[i]->Fill(bin_S,mean_range(waveform_S,p01_S,p02_S)-waveform_S.at(j));
+	      if ( p01_C > 0 && p01_C < 501 ) C_01_hist[i]->Fill(bin_C,mean_range(waveform_C,p01_C,p02_C)-waveform_C.at(j));
+	      if ( p02_S > 0 && p02_S < 501 ) S_02_hist[i]->Fill(bin_S,mean_range(waveform_S,p02_S,p03_S)-waveform_S.at(j));
+	      if ( p02_C > 0 && p02_C < 501 ) C_02_hist[i]->Fill(bin_C,mean_range(waveform_C,p02_C,p03_C)-waveform_C.at(j));
+	      if ( p03_S > 0 && p03_S < 501 ) S_03_hist[i]->Fill(bin_S,mean_range(waveform_S,p03_S,p04_S)-waveform_S.at(j));
+	      if ( p03_C > 0 && p03_C < 501 ) C_03_hist[i]->Fill(bin_C,mean_range(waveform_C,p03_C,p04_C)-waveform_C.at(j));
+	      if ( p04_S > 0 && p04_S < 501 ) S_04_hist[i]->Fill(bin_S,mean_range(waveform_S,p04_S,p05_S)-waveform_S.at(j));
+	      if ( p04_C > 0 && p04_C < 501 ) C_04_hist[i]->Fill(bin_C,mean_range(waveform_C,p04_C,p05_C)-waveform_C.at(j));
+	      if ( p05_S > 0 && p05_S < 501 ) S_05_hist[i]->Fill(bin_S,mean_range(waveform_S,p05_S,p06_S)-waveform_S.at(j));
+	      if ( p05_C > 0 && p05_C < 501 ) C_05_hist[i]->Fill(bin_C,mean_range(waveform_C,p05_C,p06_C)-waveform_C.at(j));
+	      if ( p06_S > 0 && p06_S < 501 ) S_06_hist[i]->Fill(bin_S,mean_range(waveform_S,p06_S,p07_S)-waveform_S.at(j));
+	      if ( p06_C > 0 && p06_C < 501 ) C_06_hist[i]->Fill(bin_C,mean_range(waveform_C,p06_C,p07_C)-waveform_C.at(j));
+	      if ( p07_S > 0 && p07_S < 501 ) S_07_hist[i]->Fill(bin_S,mean_range(waveform_S,p07_S,p08_S)-waveform_S.at(j));
+	      if ( p07_C > 0 && p07_C < 501 ) C_07_hist[i]->Fill(bin_C,mean_range(waveform_C,p07_C,p08_C)-waveform_C.at(j));
+	      if ( p08_S > 0 && p08_S < 501 ) S_08_hist[i]->Fill(bin_S,mean_range(waveform_S,p08_S,p09_S)-waveform_S.at(j));
+	      if ( p08_C > 0 && p08_C < 501 ) C_08_hist[i]->Fill(bin_C,mean_range(waveform_C,p08_C,p09_C)-waveform_C.at(j));
+	      if ( p09_S > 0 && p09_S < 501 ) S_09_hist[i]->Fill(bin_S,mean_range(waveform_S,p09_S,p10_S)-waveform_S.at(j));
+	      if ( p09_C > 0 && p09_C < 501 ) C_09_hist[i]->Fill(bin_C,mean_range(waveform_C,p09_C,p10_C)-waveform_C.at(j));
+	      if ( p10_S > 0 && p10_S < 501 ) S_10_hist[i]->Fill(bin_S,mean_range(waveform_S,p10_S,p00_S)-waveform_S.at(j));
+	      if ( p10_C > 0 && p10_C < 501 ) C_10_hist[i]->Fill(bin_C,mean_range(waveform_C,p10_C,p00_C)-waveform_C.at(j));
+	    }
+	  
 	  }
 	}
 
@@ -290,7 +446,31 @@ int main(int argc, char** argv) {
 	//std::cout<<"test : "<<iEvt<<" | "<<drs_stop<<std::endl;
 
     }
+    outputRoot->cd();
+    hist_CC1->Write();
+    hist_CC2->Write();
+    
+    hist_PS->Write();
+    hist_MC->Write();
+    hist_TC->Write();
+    
+    hist_DWC1_pos_corrected  ->Write();
+    hist_DWC2_pos_corrected  ->Write();
+    hist_DWC_x_corr_corrected->Write();
+    hist_DWC_y_corr_corrected->Write();
 
+    hist_CC1_after->Write();
+    hist_CC2_after->Write();
+    
+    hist_PS_after->Write();
+    hist_MC_after->Write();
+    hist_TC_after->Write();
+    
+    hist_DWC1_pos_after  ->Write();
+    hist_DWC2_pos_after  ->Write();
+    hist_DWC_x_corr_after->Write();
+    hist_DWC_y_corr_after->Write();
+    
     for (int i=0; i< 36; i++){
       S_hist[i]->Write();
       C_hist[i]->Write();

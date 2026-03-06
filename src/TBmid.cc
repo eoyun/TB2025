@@ -1,10 +1,63 @@
 #include "TBmid.h"
+#include "TFile.h"
+#include "TH1D.h"
+#include "TH2D.h"
 
 #include "stdio.h"
 #include <numeric>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <TString.h>
+#include <TObjArray.h>
+#include <TObjString.h>
+
+bool LoadCorrectionFactors(const TString& filename,
+                           const TString& targetName,
+                           std::vector<double>& factors)
+{
+    std::ifstream fin(filename.Data());
+    if (!fin.is_open()) {
+        std::cerr << "Cannot open file: " << filename << std::endl;
+        return false;
+    }
+
+    factors.clear();
+
+    std::string line_std;
+    while (std::getline(fin, line_std)) {
+
+        TString line(line_std);
+
+        // comma 기준 분리
+        TObjArray* tokens = line.Tokenize(",");
+
+        if (tokens->GetEntries() < 2) {
+            delete tokens;
+            continue;
+        }
+
+        TString name = ((TObjString*)tokens->At(0))->GetString();
+
+        if (name == targetName) {
+
+            for (int i = 1; i < tokens->GetEntries(); ++i) {
+                TString valStr = ((TObjString*)tokens->At(i))->GetString();
+                factors.push_back(valStr.Atof());
+            }
+
+            delete tokens;
+            return true;
+        }
+
+        delete tokens;
+    }
+
+    return false;
+}
 
 TBwaveform::TBwaveform()
-    : channel_(-1), waveform_(0),drs_stop_(-1) {}
+    : channel_(-1), waveform_(0),drs_stop_(-1),name_("") {}
 
 void TBwaveform::init()
 {
@@ -80,8 +133,89 @@ float TBwaveform::emulfastADC(int rise, int width, int buffer) const
   return adc_sig - adc_ped;
 }
 
+std::vector<float> TBwaveform::ADCcorrectedWaveform() const
+{
+  std::vector<float> result;
+  int point[11] = {1,94,187,280,373,466,560,653,746,839,932};
+  int min_diff = abs(drs_stop_ - point[0]);
+  int index = 0;
+  for (int i=1;i<11;i++){
+    int diff = abs(drs_stop_ - point[i]);
+    if (min_diff > diff){
+      index = i;
+      min_diff = diff;
+    }
+  }
+  TFile * f_ADC_calib = new TFile("../drs_stop_Run_12341.root","read");
+  TString name = name_;   // copy
+  name.ReplaceAll("-", "_");
+  //std::cout<<"test "<<" | "<<Form("%s_%02d",name.Data(),index)<<std::endl;
+  TH2D* h = (TH2D*)f_ADC_calib->Get(Form("%s_%02d",name.Data(),index));
+  //std::vector<double> corr;
+  
+  //LoadCorrectionFactors("../th2d_means.csv",  Form("%d_%02d",name.Data(),index), corr);
+
+  for (int j = 0; j < (int)waveform_.size(); j++){
+    int bin;
+    if (j + drs_stop_ + 1 < 1024) bin = j + drs_stop_ + 1;
+    else bin = j + drs_stop_ + 1 - 1024;
+    //double mean = corr.at(bin);
+    TH1D* proy = h->ProjectionY("proy",bin,bin,"");
+    double mean = proy->GetMean();;
+    result.push_back(waveform_.at(j) + mean);
+  }
+  f_ADC_calib->Close();
+  return std::move(result);
+}
+
+std::vector<float> TBwaveform::ADCpedcorrectedWaveform() const
+{
+  std::vector<float> result;
+  int point[11] = {1,94,187,280,373,466,560,653,746,839,932};
+  int min_diff = abs(drs_stop_ - point[0]);
+  int index = 0;
+  for (int i=1;i<11;i++){
+    int diff = abs(drs_stop_ - point[i]);
+    if (min_diff > diff){
+      index = i;
+      min_diff = diff;
+    }
+  }
+  TString name = name_;   // copy
+  TFile * f_ADC_calib = new TFile("../drs_stop_Run_12341.root","read");
+  name.ReplaceAll("-", "_");
+  //std::vector<double> corr;
+  TH2D* h = (TH2D*)f_ADC_calib->Get(Form("%s_%02d",name.Data(),index));
+  
+  //LoadCorrectionFactors("../th2d_means.csv", Form("%d_%02d",name.Data(),index), corr);
+  for (int j = 0; j < (int)waveform_.size(); j++){
+    int bin;
+    if (j + drs_stop_ + 1 < 1024) bin = j + drs_stop_ + 1;
+    else bin = j + drs_stop_ + 1 - 1024;
+    //double mean = corr.at(bin);
+    TH1D* proy = h->ProjectionY("proy",bin,bin,"");
+    double mean = proy->GetMean();;
+    result.push_back(waveform_.at(j) + mean);
+  }
+  f_ADC_calib->Close();
+
+  std::vector<float> pedresult;
+  result.reserve(waveform_.size());
+  float ped = 0;
+  for (int i = 1; i < 101; i++)
+    ped += static_cast<float>(result.at(i)) / 100.;
+
+  for (unsigned idx = 0; idx < result.size(); idx++)
+  {
+    float abin = ped - static_cast<float>(result.at(idx));
+    pedresult.emplace_back(abin);
+  }
+
+  return std::move(pedresult);
+}
+
 TBfastmode::TBfastmode()
-    : channel_(-1), adc_(0), timing_(0) {}
+    : channel_(-1), adc_(0), timing_(0), name_("") {}
 
 TBmidbase::TBmidbase()
     : evt_(0), run_(0), mid_(0),
