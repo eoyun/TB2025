@@ -4,12 +4,9 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <string>
 #include "TString.h"
 
-
-bool LoadCorrectionFactors(const TString& filename,
-                           const TString& targetName,
-                           std::vector<double>& factors);
 
 class TBwaveform
 {
@@ -34,6 +31,8 @@ public:
   float emulfastADC(int rise, int width, int buffer = 24) const;
   std::vector<float> ADCcorrectedWaveform() const;
   std::vector<float> ADCpedcorrectedWaveform() const;
+
+  static void SetCorrectionCSVPath(const std::string &csvPath);
 
   void fill(unsigned int bin, short val) { waveform_.at(bin) = val; }
 

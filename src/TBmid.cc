@@ -1,59 +1,91 @@
 #include "TBmid.h"
-#include "TFile.h"
-#include "TH1D.h"
-#include "TH2D.h"
+
+#include "TBdetector.h"
 
 #include "stdio.h"
 #include <numeric>
 #include <iostream>
-#include <fstream>
 #include <vector>
-#include <TString.h>
-#include <TObjArray.h>
-#include <TObjString.h>
+#include <string>
+#include <cstdlib>
 
-bool LoadCorrectionFactors(const TString& filename,
-                           const TString& targetName,
-                           std::vector<double>& factors)
+namespace {
+std::string gCorrectionCSVPath = "../th2d_means.csv";
+bool gCorrectionLoaded = false;
+
+bool IsModuleTowerSCName(const TString &name)
 {
-    std::ifstream fin(filename.Data());
-    if (!fin.is_open()) {
-        std::cerr << "Cannot open file: " << filename << std::endl;
-        return false;
+  return name.BeginsWith("M") && name.Contains("-T") && (name.EndsWith("-S") || name.EndsWith("-C"));
+}
+
+int GetPatchIndex(int drsStop)
+{
+  const int points[11] = {1, 94, 187, 280, 373, 466, 560, 653, 746, 839, 932};
+
+  int minDiff = std::abs(drsStop - points[0]);
+  int index = 0;
+
+  for (int i = 1; i < 11; ++i)
+  {
+    const int diff = std::abs(drsStop - points[i]);
+    if (minDiff > diff)
+    {
+      index = i;
+      minDiff = diff;
     }
+  }
 
-    factors.clear();
+  return index;
+}
 
-    std::string line_std;
-    while (std::getline(fin, line_std)) {
+bool EnsureCorrectionLoaded()
+{
+  if (gCorrectionLoaded)
+    return true;
 
-        TString line(line_std);
+  gCorrectionLoaded = TBcid::LoadCorrectionFactorsFromCSV(gCorrectionCSVPath);
+  if (!gCorrectionLoaded)
+    std::cerr << "TBwaveform - failed to load correction CSV: " << gCorrectionCSVPath << std::endl;
 
-        // comma 기준 분리
-        TObjArray* tokens = line.Tokenize(",");
+  return gCorrectionLoaded;
+}
 
-        if (tokens->GetEntries() < 2) {
-            delete tokens;
-            continue;
-        }
+std::vector<float> BuildADCcorrectedWaveform(const std::vector<short> &waveform, int drsStop, const TString &name)
+{
+  if (waveform.empty())
+    return std::vector<float>();
 
-        TString name = ((TObjString*)tokens->At(0))->GetString();
+  std::vector<float> result(waveform.begin(), waveform.end());
 
-        if (name == targetName) {
+  if (!IsModuleTowerSCName(name))
+    return result;
 
-            for (int i = 1; i < tokens->GetEntries(); ++i) {
-                TString valStr = ((TObjString*)tokens->At(i))->GetString();
-                factors.push_back(valStr.Atof());
-            }
+  if (!EnsureCorrectionLoaded())
+    return result;
 
-            delete tokens;
-            return true;
-        }
+  const int patchIndex = GetPatchIndex(drsStop);
+  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
+  if (factors == nullptr || factors->empty())
+    return result;
 
-        delete tokens;
-    }
+  for (size_t j = 0; j < waveform.size(); ++j)
+  {
+    int bin = static_cast<int>(j) + drsStop + 1;
+    if (bin >= 1024)
+      bin -= 1024;
 
-    return false;
+    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
+      result[j] = static_cast<float>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
+  }
+
+  return result;
+}
+}
+
+void TBwaveform::SetCorrectionCSVPath(const std::string &csvPath)
+{
+  gCorrectionCSVPath = csvPath;
+  gCorrectionLoaded = false;
 }
 
 TBwaveform::TBwaveform()
@@ -135,79 +167,23 @@ float TBwaveform::emulfastADC(int rise, int width, int buffer) const
 
 std::vector<float> TBwaveform::ADCcorrectedWaveform() const
 {
-  std::vector<float> result;
-  int point[11] = {1,94,187,280,373,466,560,653,746,839,932};
-  int min_diff = abs(drs_stop_ - point[0]);
-  int index = 0;
-  for (int i=1;i<11;i++){
-    int diff = abs(drs_stop_ - point[i]);
-    if (min_diff > diff){
-      index = i;
-      min_diff = diff;
-    }
-  }
-  TFile * f_ADC_calib = new TFile("../drs_stop_Run_12341.root","read");
-  TString name = name_;   // copy
-  name.ReplaceAll("-", "_");
-  //std::cout<<"test "<<" | "<<Form("%s_%02d",name.Data(),index)<<std::endl;
-  TH2D* h = (TH2D*)f_ADC_calib->Get(Form("%s_%02d",name.Data(),index));
-  //std::vector<double> corr;
-  
-  //LoadCorrectionFactors("../th2d_means.csv",  Form("%d_%02d",name.Data(),index), corr);
-
-  for (int j = 0; j < (int)waveform_.size(); j++){
-    int bin;
-    if (j + drs_stop_ + 1 < 1024) bin = j + drs_stop_ + 1;
-    else bin = j + drs_stop_ + 1 - 1024;
-    //double mean = corr.at(bin);
-    TH1D* proy = h->ProjectionY("proy",bin,bin,"");
-    double mean = proy->GetMean();;
-    result.push_back(waveform_.at(j) + mean);
-  }
-  f_ADC_calib->Close();
-  return std::move(result);
+  return BuildADCcorrectedWaveform(waveform_, drs_stop_, name_);
 }
 
 std::vector<float> TBwaveform::ADCpedcorrectedWaveform() const
 {
-  std::vector<float> result;
-  int point[11] = {1,94,187,280,373,466,560,653,746,839,932};
-  int min_diff = abs(drs_stop_ - point[0]);
-  int index = 0;
-  for (int i=1;i<11;i++){
-    int diff = abs(drs_stop_ - point[i]);
-    if (min_diff > diff){
-      index = i;
-      min_diff = diff;
-    }
-  }
-  TString name = name_;   // copy
-  TFile * f_ADC_calib = new TFile("../drs_stop_Run_12341.root","read");
-  name.ReplaceAll("-", "_");
-  //std::vector<double> corr;
-  TH2D* h = (TH2D*)f_ADC_calib->Get(Form("%s_%02d",name.Data(),index));
-  
-  //LoadCorrectionFactors("../th2d_means.csv", Form("%d_%02d",name.Data(),index), corr);
-  for (int j = 0; j < (int)waveform_.size(); j++){
-    int bin;
-    if (j + drs_stop_ + 1 < 1024) bin = j + drs_stop_ + 1;
-    else bin = j + drs_stop_ + 1 - 1024;
-    //double mean = corr.at(bin);
-    TH1D* proy = h->ProjectionY("proy",bin,bin,"");
-    double mean = proy->GetMean();;
-    result.push_back(waveform_.at(j) + mean);
-  }
-  f_ADC_calib->Close();
+  const auto corrected = ADCcorrectedWaveform();
 
   std::vector<float> pedresult;
-  result.reserve(waveform_.size());
+  pedresult.reserve(corrected.size());
+
   float ped = 0;
   for (int i = 1; i < 101; i++)
-    ped += static_cast<float>(result.at(i)) / 100.;
+    ped += static_cast<float>(corrected.at(i)) / 100.;
 
-  for (unsigned idx = 0; idx < result.size(); idx++)
+  for (unsigned idx = 0; idx < corrected.size(); idx++)
   {
-    float abin = ped - static_cast<float>(result.at(idx));
+    float abin = ped - static_cast<float>(corrected.at(idx));
     pedresult.emplace_back(abin);
   }
 
