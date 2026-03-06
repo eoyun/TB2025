@@ -1,6 +1,116 @@
 #include <limits.h>
 
+#include <fstream>
+#include <sstream>
+#include <cctype>
+#include <cstdlib>
+
 #include "TBdetector.h"
+
+
+std::map<std::string, std::vector<double>> TBcid::correctionFactorsCache_;
+bool TBcid::correctionFactorsLoaded_ = false;
+
+namespace {
+std::string Trim(const std::string &v)
+{
+  size_t start = 0;
+  while (start < v.size() && std::isspace(static_cast<unsigned char>(v[start])))
+    ++start;
+
+  size_t end = v.size();
+  while (end > start && std::isspace(static_cast<unsigned char>(v[end - 1])))
+    --end;
+
+  return v.substr(start, end - start);
+}
+}
+
+std::string TBcid::BuildCorrectionKey(const TString &name, int patch)
+{
+  TString key = name;
+  key.ReplaceAll("-", "_");
+
+  return Form("%s_%02d", key.Data(), patch);
+}
+
+bool TBcid::LoadCorrectionFactorsFromCSV(const std::string &csvPath)
+{
+  correctionFactorsCache_.clear();
+
+  std::ifstream fin(csvPath.c_str());
+  if (!fin.is_open())
+    return false;
+
+  std::string line;
+  bool firstLine = true;
+
+  while (std::getline(fin, line))
+  {
+    if (line.empty())
+      continue;
+
+    std::stringstream ss(line);
+    std::string token;
+    std::vector<std::string> tokens;
+
+    while (std::getline(ss, token, ','))
+      tokens.push_back(Trim(token));
+
+    if (tokens.empty())
+      continue;
+
+    if (firstLine && tokens.at(0) == "name")
+    {
+      firstLine = false;
+      continue;
+    }
+    firstLine = false;
+
+    const std::string &rowName = tokens.at(0);
+    if (rowName.find("_S_") == std::string::npos && rowName.find("_C_") == std::string::npos)
+      continue;
+
+    std::vector<double> factors;
+    factors.reserve(tokens.size() > 1 ? tokens.size() - 1 : 0);
+
+    for (size_t i = 1; i < tokens.size(); ++i)
+    {
+      if (tokens.at(i).empty())
+        continue;
+      factors.push_back(std::atof(tokens.at(i).c_str()));
+    }
+
+    if (!factors.empty())
+      correctionFactorsCache_[rowName] = factors;
+  }
+
+  correctionFactorsLoaded_ = true;
+  return !correctionFactorsCache_.empty();
+}
+
+bool TBcid::HasCachedCorrection(const TString &name, int patch)
+{
+  if (!correctionFactorsLoaded_)
+    return false;
+
+  return correctionFactorsCache_.find(BuildCorrectionKey(name, patch)) != correctionFactorsCache_.end();
+}
+
+bool TBcid::GetCachedCorrection(const TString &name, int patch, std::vector<double> &factors)
+{
+  factors.clear();
+
+  if (!correctionFactorsLoaded_)
+    return false;
+
+  const auto it = correctionFactorsCache_.find(BuildCorrectionKey(name, patch));
+  if (it == correctionFactorsCache_.end())
+    return false;
+
+  factors = it->second;
+  return true;
+}
 
 TBcid::TBcid(int midin, int channelin)
     : mid_(midin), channel_(channelin), name_("") {}
