@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     TBcid cid_DWC2_U = util.GetCID("DWC2U");
     TBcid cid_DWC2_D = util.GetCID("DWC2D");
 
-    TBcid cid_M4_T2_S = util.GetCID("M5-T2-S");
+    TBcid cid_M4_T2_S = util.GetCID("M4-T2-S");
 
     TH2D* wave_uncor = new TH2D("wave_uncor","",1000,0,1000,200,-100,100);
     TH2D* wave_cor = new TH2D("wave_cor","",1000,0,1000,200,-100,100);
@@ -199,10 +199,10 @@ int main(int argc, char** argv) {
         if ( !(dwcCorrelationCut(DWC1_corrected_pos, DWC2_corrected_pos, cut_DWC)) ) continue;
 	//if ( std::abs(DWC1_corrected_pos.at(0))>5 || std::abs(DWC1_corrected_pos.at(1))>5) continue;
         //if ( std::abs(DWC2_corrected_pos.at(0))>5 || std::abs(DWC2_corrected_pos.at(1))>5) continue;
-        //if ( signal_PS < cut_PS1 || signal_PS > cut_PS2 ) continue; // Select above 3 mip peak
-        //if ( signal_MC < cut_MC ) continue; // Select only pedestals
-        if ( signal_MC > cut_MC ) continue; // Select only pedestals
-        if ( signal_PS > cut_PS2 ) continue; // Select only pedestals
+        if ( signal_PS < cut_PS1 || signal_PS > cut_PS2 ) continue; // Select above 3 mip peak
+        if ( signal_MC < cut_MC ) continue; // Select only pedestals
+        //if ( signal_MC > cut_MC ) continue; // Select only pedestals
+        //if ( signal_PS > cut_PS2 ) continue; // Select only pedestals
         
 	hist_CC1_after->Fill(signal_CC1);
         hist_CC2_after->Fill(signal_CC2);
