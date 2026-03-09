@@ -144,13 +144,25 @@ int main(int argc, char *argv[]) {
     int fRunNum = std::stoi(argv[1]);
     int fMaxEvent = std::stoi(argv[2]);
     int fMaxFile = -1;
+
+    // Dataset switch (default: TB2025 mapping)
+    // usage example: ./calib_DRC_ADC <run> <maxEvent> 1
+    bool isKEK = false;
+    if (argc > 3)
+        isKEK = (std::stoi(argv[3]) != 0);
+
+    const std::string mappingPath = isKEK ? "../mapping/mapping_KEK_v1.root" : "../mapping/mapping_TB2025_v1.root";
+    const std::string correctionCSVPath = isKEK ? "../kek_mean.csv" : "../th2d_means.csv";
+    const std::string dataPath = isKEK ? "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/KEK_DRC_TB_Data/"
+                                       : "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_Data/";
     
     fs::path dir("./Calib_ADC");   
     if (!(fs::exists(dir))) fs::create_directory(dir);
         
     // initialize the utility class
     TButility util = TButility();
-    util.LoadMapping("../mapping/mapping_TB2025_v1.root");
+    util.LoadMapping(mappingPath);
+    TBwaveform::SetCorrectionCSVPath(correctionCSVPath);
     
     TFile* f_DWC = TFile::Open((TString)("./DWC/DWC_Run_" + std::to_string(fRunNum) + ".root"), "READ");
     TH2D* h_DWC1_pos   = (TH2D*) f_DWC->Get("dwc1_pos");
@@ -170,26 +182,32 @@ int main(int argc, char *argv[]) {
     std::vector<TBcid> cid_M8_C; std::vector<TBcid> cid_M8_S;
     std::vector<TBcid> cid_M9_C; std::vector<TBcid> cid_M9_S;
     
+    auto getDRCName = [&](int module, int tower, const char* type) -> TString {
+        if (isKEK)
+            return Form("T%d-%s", tower, type);
+        return Form("M%d-T%d-%s", module, tower, type);
+    };
+
     for(int tower = 1; tower <= 4; tower++) {
-        cid_M1_C.emplace_back(util.GetCID("M1-T" + std::to_string(tower) + "-C")); 
-        cid_M2_C.emplace_back(util.GetCID("M2-T" + std::to_string(tower) + "-C")); 
-        cid_M3_C.emplace_back(util.GetCID("M3-T" + std::to_string(tower) + "-C")); 
-        cid_M4_C.emplace_back(util.GetCID("M4-T" + std::to_string(tower) + "-C")); 
-        cid_M5_C.emplace_back(util.GetCID("M5-T" + std::to_string(tower) + "-C")); 
-        cid_M6_C.emplace_back(util.GetCID("M6-T" + std::to_string(tower) + "-C")); 
-        cid_M7_C.emplace_back(util.GetCID("M7-T" + std::to_string(tower) + "-C")); 
-        cid_M8_C.emplace_back(util.GetCID("M8-T" + std::to_string(tower) + "-C")); 
-        cid_M9_C.emplace_back(util.GetCID("M9-T" + std::to_string(tower) + "-C")); 
-        
-        cid_M1_S.emplace_back(util.GetCID("M1-T" + std::to_string(tower) + "-S")); 
-        cid_M2_S.emplace_back(util.GetCID("M2-T" + std::to_string(tower) + "-S")); 
-        cid_M3_S.emplace_back(util.GetCID("M3-T" + std::to_string(tower) + "-S")); 
-        cid_M4_S.emplace_back(util.GetCID("M4-T" + std::to_string(tower) + "-S")); 
-        cid_M5_S.emplace_back(util.GetCID("M5-T" + std::to_string(tower) + "-S")); 
-        cid_M6_S.emplace_back(util.GetCID("M6-T" + std::to_string(tower) + "-S")); 
-        cid_M7_S.emplace_back(util.GetCID("M7-T" + std::to_string(tower) + "-S")); 
-        cid_M8_S.emplace_back(util.GetCID("M8-T" + std::to_string(tower) + "-S")); 
-        cid_M9_S.emplace_back(util.GetCID("M9-T" + std::to_string(tower) + "-S")); 
+        cid_M1_C.emplace_back(util.GetCID(getDRCName(1, tower, "C")));
+        cid_M2_C.emplace_back(util.GetCID(getDRCName(2, tower, "C")));
+        cid_M3_C.emplace_back(util.GetCID(getDRCName(3, tower, "C")));
+        cid_M4_C.emplace_back(util.GetCID(getDRCName(4, tower, "C")));
+        cid_M5_C.emplace_back(util.GetCID(getDRCName(5, tower, "C")));
+        cid_M6_C.emplace_back(util.GetCID(getDRCName(6, tower, "C")));
+        cid_M7_C.emplace_back(util.GetCID(getDRCName(7, tower, "C")));
+        cid_M8_C.emplace_back(util.GetCID(getDRCName(8, tower, "C")));
+        cid_M9_C.emplace_back(util.GetCID(getDRCName(9, tower, "C")));
+
+        cid_M1_S.emplace_back(util.GetCID(getDRCName(1, tower, "S")));
+        cid_M2_S.emplace_back(util.GetCID(getDRCName(2, tower, "S")));
+        cid_M3_S.emplace_back(util.GetCID(getDRCName(3, tower, "S")));
+        cid_M4_S.emplace_back(util.GetCID(getDRCName(4, tower, "S")));
+        cid_M5_S.emplace_back(util.GetCID(getDRCName(5, tower, "S")));
+        cid_M6_S.emplace_back(util.GetCID(getDRCName(6, tower, "S")));
+        cid_M7_S.emplace_back(util.GetCID(getDRCName(7, tower, "S")));
+        cid_M8_S.emplace_back(util.GetCID(getDRCName(8, tower, "S")));
+        cid_M9_S.emplace_back(util.GetCID(getDRCName(9, tower, "S")));
     }
     
     // Aux. detectors
@@ -740,7 +758,7 @@ int main(int argc, char *argv[]) {
     
     // MID: 3-7: PMT modules, MID 9: LC, MID 10: Aux(CC1, CC2, PS, TC, MC), MID 12: Triggers (T1, T2, T1NIM, T2NIM, Coin), MID 14-17: MCP micro, MID 18: DWC
     // TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/Volumes/Macintosh HD-1/Users/yhep/scratch/YUdaq", {3, 4, 5, 6, 7, 9, 10, 12, 18});
-    TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_Data/", {3, 4, 5, 6, 7, 9, 10, 12, 18});
+    TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, dataPath, {3, 4, 5, 6, 7, 9, 10, 12, 18});
     
     // Set Maximum event
     if (fMaxEvent == -1 || fMaxEvent > readerWave.GetMaxEvent())
