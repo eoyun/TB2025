@@ -51,7 +51,7 @@ bool EnsureCorrectionLoaded()
   return gCorrectionLoaded;
 }
 
-std::vector<float> BuildADCcorrectedWaveform(const std::vector<short> &waveform, int drsStop, const TString &name)
+std::vector<float> BuildADCcorrectedWaveformF(const std::vector<short> &waveform, int drsStop, const TString &name)
 {
   if (waveform.empty())
     return std::vector<float>();
@@ -81,6 +81,100 @@ std::vector<float> BuildADCcorrectedWaveform(const std::vector<short> &waveform,
 
   return result;
 }
+
+std::vector<float> BuildADCcorrectedWaveformF(const std::vector<short> &waveform, int drsStop, const TString &name,const int index)
+{
+  if (waveform.empty())
+    return std::vector<float>();
+
+  std::vector<float> result(waveform.begin(), waveform.end());
+
+  if (!IsModuleTowerSCName(name))
+    return result;
+
+  if (!EnsureCorrectionLoaded())
+    return result;
+
+  const int patchIndex = index;
+  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
+  if (factors == nullptr || factors->empty())
+    return result;
+
+  for (size_t j = 0; j < waveform.size(); ++j)
+  {
+    int bin = static_cast<int>(j) + drsStop + 1;
+    if (bin >= 1024)
+      bin -= 1024;
+
+    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
+      result[j] = static_cast<float>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
+  }
+
+  return result;
+}
+
+std::vector<double> BuildADCcorrectedWaveform(const std::vector<short> &waveform, int drsStop, const TString &name)
+{
+  if (waveform.empty())
+    return std::vector<double>();
+
+  std::vector<double> result(waveform.begin(), waveform.end());
+
+  if (!IsModuleTowerSCName(name))
+    return result;
+
+  if (!EnsureCorrectionLoaded())
+    return result;
+
+  const int patchIndex = GetPatchIndex(drsStop);
+  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
+  if (factors == nullptr || factors->empty())
+    return result;
+
+  for (size_t j = 0; j < waveform.size(); ++j)
+  {
+    int bin = static_cast<int>(j) + drsStop + 1;
+    if (bin >= 1024)
+      bin -= 1024;
+
+    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
+      result[j] = static_cast<double>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
+  }
+
+  return result;
+}
+
+std::vector<double> BuildADCcorrectedWaveform(const std::vector<short> &waveform, int drsStop, const TString &name,const int index)
+{
+  if (waveform.empty())
+    return std::vector<double>();
+
+  std::vector<double> result(waveform.begin(), waveform.end());
+
+  if (!IsModuleTowerSCName(name))
+    return result;
+
+  if (!EnsureCorrectionLoaded())
+    return result;
+
+  const int patchIndex = index;
+  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
+  if (factors == nullptr || factors->empty())
+    return result;
+
+  for (size_t j = 0; j < waveform.size(); ++j)
+  {
+    int bin = static_cast<int>(j) + drsStop + 1;
+    if (bin >= 1024)
+      bin -= 1024;
+
+    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
+      result[j] = static_cast<double>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
+  }
+
+  return result;
+}
+
 }
 
 void TBwaveform::SetCorrectionCSVPath(const std::string &csvPath)
@@ -166,12 +260,17 @@ float TBwaveform::emulfastADC(int rise, int width, int buffer) const
   return adc_sig - adc_ped;
 }
 
-std::vector<float> TBwaveform::ADCcorrectedWaveform() const
+std::vector<float> TBwaveform::ADCcorrectedWaveformF() const
 {
-  return BuildADCcorrectedWaveform(waveform_, drs_stop_, name_);
+  return BuildADCcorrectedWaveformF(waveform_, drs_stop_, name_);
 }
 
-std::vector<float> TBwaveform::ADCpedcorrectedWaveform() const
+std::vector<float> TBwaveform::ADCcorrectedWaveformF(int index) const
+{
+  return BuildADCcorrectedWaveformF(waveform_, drs_stop_, name_, index);
+}
+
+std::vector<float> TBwaveform::ADCpedcorrectedWaveformF() const
 {
   const auto corrected = ADCcorrectedWaveform();
 
@@ -185,6 +284,76 @@ std::vector<float> TBwaveform::ADCpedcorrectedWaveform() const
   for (unsigned idx = 0; idx < corrected.size(); idx++)
   {
     float abin = ped - static_cast<float>(corrected.at(idx));
+    pedresult.emplace_back(abin);
+  }
+
+  return std::move(pedresult);
+}
+
+std::vector<float> TBwaveform::ADCpedcorrectedWaveformF(int index) const
+{
+  const auto corrected = ADCcorrectedWaveform(index);
+
+  std::vector<float> pedresult;
+  pedresult.reserve(corrected.size());
+
+  float ped = 0;
+  for (int i = 1; i < 101; i++)
+    ped += static_cast<float>(corrected.at(i)) / 100.;
+
+  for (unsigned idx = 0; idx < corrected.size(); idx++)
+  {
+    float abin = ped - static_cast<float>(corrected.at(idx));
+    pedresult.emplace_back(abin);
+  }
+
+  return std::move(pedresult);
+}
+
+std::vector<double> TBwaveform::ADCcorrectedWaveform() const
+{
+  return BuildADCcorrectedWaveform(waveform_, drs_stop_, name_);
+}
+
+std::vector<double> TBwaveform::ADCcorrectedWaveform(int index) const
+{
+  return BuildADCcorrectedWaveform(waveform_, drs_stop_, name_, index);
+}
+
+std::vector<double> TBwaveform::ADCpedcorrectedWaveform() const
+{
+  const auto corrected = ADCcorrectedWaveform();
+
+  std::vector<double> pedresult;
+  pedresult.reserve(corrected.size());
+
+  double ped = 0;
+  for (int i = 1; i < 101; i++)
+    ped += static_cast<double>(corrected.at(i)) / 100.;
+
+  for (unsigned idx = 0; idx < corrected.size(); idx++)
+  {
+    double abin = ped - static_cast<double>(corrected.at(idx));
+    pedresult.emplace_back(abin);
+  }
+
+  return std::move(pedresult);
+}
+
+std::vector<double> TBwaveform::ADCpedcorrectedWaveform(int index) const
+{
+  const auto corrected = ADCcorrectedWaveform(index);
+
+  std::vector<double> pedresult;
+  pedresult.reserve(corrected.size());
+
+  double ped = 0;
+  for (int i = 1; i < 101; i++)
+    ped += static_cast<double>(corrected.at(i)) / 100.;
+
+  for (unsigned idx = 0; idx < corrected.size(); idx++)
+  {
+    double abin = ped - static_cast<double>(corrected.at(idx));
     pedresult.emplace_back(abin);
   }
 

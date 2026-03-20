@@ -29,8 +29,14 @@ public:
   std::vector<float> pedcorrectedWaveform() const;
   float pedcorrectedADC(float ped, int buffer = 24) const;
   float emulfastADC(int rise, int width, int buffer = 24) const;
-  std::vector<float> ADCcorrectedWaveform() const;
-  std::vector<float> ADCpedcorrectedWaveform() const;
+  std::vector<float> ADCcorrectedWaveformF() const;
+  std::vector<float> ADCcorrectedWaveformF(int index) const;
+  std::vector<float> ADCpedcorrectedWaveformF() const;
+  std::vector<float> ADCpedcorrectedWaveformF(int index) const;
+  std::vector<double> ADCcorrectedWaveform() const;
+  std::vector<double> ADCcorrectedWaveform(int index) const;
+  std::vector<double> ADCpedcorrectedWaveform() const;
+  std::vector<double> ADCpedcorrectedWaveform(int index) const;
 
   static void SetCorrectionCSVPath(const std::string &csvPath);
 

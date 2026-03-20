@@ -114,8 +114,12 @@ int main(int argc, char** argv) {
 
     TBcid cid_M4_T2_S = util.GetCID("M4-T2-S");
 
+    TH2D* drs_cor[11];
+    for (int i=0;i<11;i++) drs_cor[i] = new TH2D(Form("drs_cor_%d",i),"",1024,0,1024,200,-100,100);
     TH2D* wave_uncor = new TH2D("wave_uncor","",1000,0,1000,200,-100,100);
     TH2D* wave_cor = new TH2D("wave_cor","",1000,0,1000,200,-100,100);
+    TH2D* drs_uncor = new TH2D("drs_uncor","",1024,0,1024,200,-100,100);
+    TH2D* drs_cor_patch = new TH2D("drs_cor_match_patch","",1024,0,1024,200,-100,100);
 
 
     // MID: 3-7: PMT modules, MID 9: LC, MID 10: Aux(CC1, CC2, PS, TC, MC), MID 12: Triggers (T1, T2, T1NIM, T2NIM, Coin), MID 14-17: MCP micro, MID 18: DWC
@@ -218,13 +222,24 @@ int main(int argc, char** argv) {
 
 	TBwaveform M4_T2_S_wave = aEvent.GetData(cid_M4_T2_S);
 
-	std::vector<float> waveuncor = M4_T2_S_wave.pedcorrectedWaveform();	
-	std::vector<float> wavecor = M4_T2_S_wave.ADCpedcorrectedWaveform();	
+	int drs_stop = M4_T2_S_wave.drs_stop();
 
-	for (int i =1; i < 1001; i++){
+	std::vector<float> waveuncor = M4_T2_S_wave.pedcorrectedWaveform();
+	std::vector<float> wavecor_patch = M4_T2_S_wave.ADCpedcorrectedWaveform();
+	
+	std::vector<float> wavecor[11];
+	for (int j=0;j<11;j++) wavecor[j]= M4_T2_S_wave.ADCpedcorrectedWaveform(j);	
+
+	for (int i =1; i < 951; i++){
 	  //std::cout<<" wave value : " <<waveuncor.at(i)<<" | "<<wavecor.at(i)<<std::endl;
 	  wave_uncor->Fill(i-1,waveuncor.at(i));
-	  wave_cor->Fill(i-1,wavecor.at(i));
+	  wave_cor->Fill(i-1,wavecor_patch.at(i));
+	  int bin;
+	  if (i + drs_stop + 1<1024) bin = i + drs_stop + 1; 
+	  else bin = i + drs_stop + 1 - 1024; 
+          drs_uncor->Fill(bin,waveuncor.at(i));
+          drs_cor_patch->Fill(bin,wavecor_patch.at(i));
+          for (int j=0;j<11;j++) drs_cor[j]->Fill(bin,wavecor[j].at(i));
 	}
 
 
@@ -256,6 +271,18 @@ int main(int argc, char** argv) {
     
     wave_uncor->Write();
     wave_cor->Write();
+
+    drs_uncor->Write();
+    TH1D* profx_patch = (TH1D*)drs_cor_patch->ProfileX("drs_prox_patch",1,-1,"");
+    profx_patch->Write();
+    drs_cor_patch->Write();
+    TH1D* profx[11];
+    for (int j=0;j<11;j++) {
+	    profx[j] = (TH1D*) drs_cor[j]->ProfileX(Form("drs_prox_%d",j),1,-1,"");
+	    drs_cor[j]->Write();
+	    profx[j]->Write();
+    
+    }
 
     outputRoot->Close();
 

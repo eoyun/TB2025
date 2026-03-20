@@ -33,7 +33,7 @@ double mean_range(std::vector<short> waveform, int p00, int p01)
     int test =0;
     while (1) {
         test ++;
-        if (idx >= 1 && idx <= 1000) {
+        if (idx >= 1 && idx <= 950) {
             sum += waveform.at(idx);
             count++;
         }
@@ -368,7 +368,7 @@ int main(int argc, char** argv) {
 	  else p10_C = point[10] - drs_stop_C;
 	  
 	  if ( i != 31){
-	    for (int j = 1; j<1001;j++){
+	    for (int j = 1; j<951;j++){
 	      int bin_S;
 	      int bin_C;
 	      if (j + drs_stop_S + 1<1024) bin_S = j + drs_stop_S + 1; 
@@ -378,28 +378,28 @@ int main(int argc, char** argv) {
 
 	      S_hist[i]->Fill(bin_S,waveform_S.at(j));
 	      C_hist[i]->Fill(bin_C,waveform_C.at(j));
-	      if ( p00_S > 0 && p00_S < 1001 ) S_00_hist[i]->Fill(bin_S,mean_range(waveform_S,p00_S,p01_S)-waveform_S.at(j));
-	      if ( p00_C > 0 && p00_C < 1001 ) C_00_hist[i]->Fill(bin_C,mean_range(waveform_C,p00_C,p01_C)-waveform_C.at(j));
-	      if ( p01_S > 0 && p01_S < 1001 ) S_01_hist[i]->Fill(bin_S,mean_range(waveform_S,p01_S,p02_S)-waveform_S.at(j));
-	      if ( p01_C > 0 && p01_C < 1001 ) C_01_hist[i]->Fill(bin_C,mean_range(waveform_C,p01_C,p02_C)-waveform_C.at(j));
-	      if ( p02_S > 0 && p02_S < 1001 ) S_02_hist[i]->Fill(bin_S,mean_range(waveform_S,p02_S,p03_S)-waveform_S.at(j));
-	      if ( p02_C > 0 && p02_C < 1001 ) C_02_hist[i]->Fill(bin_C,mean_range(waveform_C,p02_C,p03_C)-waveform_C.at(j));
-	      if ( p03_S > 0 && p03_S < 1001 ) S_03_hist[i]->Fill(bin_S,mean_range(waveform_S,p03_S,p04_S)-waveform_S.at(j));
-	      if ( p03_C > 0 && p03_C < 1001 ) C_03_hist[i]->Fill(bin_C,mean_range(waveform_C,p03_C,p04_C)-waveform_C.at(j));
-	      if ( p04_S > 0 && p04_S < 1001 ) S_04_hist[i]->Fill(bin_S,mean_range(waveform_S,p04_S,p05_S)-waveform_S.at(j));
-	      if ( p04_C > 0 && p04_C < 1001 ) C_04_hist[i]->Fill(bin_C,mean_range(waveform_C,p04_C,p05_C)-waveform_C.at(j));
-	      if ( p05_S > 0 && p05_S < 1001 ) S_05_hist[i]->Fill(bin_S,mean_range(waveform_S,p05_S,p06_S)-waveform_S.at(j));
-	      if ( p05_C > 0 && p05_C < 1001 ) C_05_hist[i]->Fill(bin_C,mean_range(waveform_C,p05_C,p06_C)-waveform_C.at(j));
-	      if ( p06_S > 0 && p06_S < 1001 ) S_06_hist[i]->Fill(bin_S,mean_range(waveform_S,p06_S,p07_S)-waveform_S.at(j));
-	      if ( p06_C > 0 && p06_C < 1001 ) C_06_hist[i]->Fill(bin_C,mean_range(waveform_C,p06_C,p07_C)-waveform_C.at(j));
-	      if ( p07_S > 0 && p07_S < 1001 ) S_07_hist[i]->Fill(bin_S,mean_range(waveform_S,p07_S,p08_S)-waveform_S.at(j));
-	      if ( p07_C > 0 && p07_C < 1001 ) C_07_hist[i]->Fill(bin_C,mean_range(waveform_C,p07_C,p08_C)-waveform_C.at(j));
-	      if ( p08_S > 0 && p08_S < 1001 ) S_08_hist[i]->Fill(bin_S,mean_range(waveform_S,p08_S,p09_S)-waveform_S.at(j));
-	      if ( p08_C > 0 && p08_C < 1001 ) C_08_hist[i]->Fill(bin_C,mean_range(waveform_C,p08_C,p09_C)-waveform_C.at(j));
-	      if ( p09_S > 0 && p09_S < 1001 ) S_09_hist[i]->Fill(bin_S,mean_range(waveform_S,p09_S,p10_S)-waveform_S.at(j));
-	      if ( p09_C > 0 && p09_C < 1001 ) C_09_hist[i]->Fill(bin_C,mean_range(waveform_C,p09_C,p10_C)-waveform_C.at(j));
-	      if ( p10_S > 0 && p10_S < 1001 ) S_10_hist[i]->Fill(bin_S,mean_range(waveform_S,p10_S,p00_S)-waveform_S.at(j));
-	      if ( p10_C > 0 && p10_C < 1001 ) C_10_hist[i]->Fill(bin_C,mean_range(waveform_C,p10_C,p00_C)-waveform_C.at(j));
+	      if ( p00_S > 0 && p00_S < 951 ) S_00_hist[i]->Fill(bin_S,mean_range(waveform_S,p00_S,p01_S)-waveform_S.at(j));
+	      if ( p00_C > 0 && p00_C < 951 ) C_00_hist[i]->Fill(bin_C,mean_range(waveform_C,p00_C,p01_C)-waveform_C.at(j));
+	      if ( p01_S > 0 && p01_S < 951 ) S_01_hist[i]->Fill(bin_S,mean_range(waveform_S,p01_S,p02_S)-waveform_S.at(j));
+	      if ( p01_C > 0 && p01_C < 951 ) C_01_hist[i]->Fill(bin_C,mean_range(waveform_C,p01_C,p02_C)-waveform_C.at(j));
+	      if ( p02_S > 0 && p02_S < 951 ) S_02_hist[i]->Fill(bin_S,mean_range(waveform_S,p02_S,p03_S)-waveform_S.at(j));
+	      if ( p02_C > 0 && p02_C < 951 ) C_02_hist[i]->Fill(bin_C,mean_range(waveform_C,p02_C,p03_C)-waveform_C.at(j));
+	      if ( p03_S > 0 && p03_S < 951 ) S_03_hist[i]->Fill(bin_S,mean_range(waveform_S,p03_S,p04_S)-waveform_S.at(j));
+	      if ( p03_C > 0 && p03_C < 951 ) C_03_hist[i]->Fill(bin_C,mean_range(waveform_C,p03_C,p04_C)-waveform_C.at(j));
+	      if ( p04_S > 0 && p04_S < 951 ) S_04_hist[i]->Fill(bin_S,mean_range(waveform_S,p04_S,p05_S)-waveform_S.at(j));
+	      if ( p04_C > 0 && p04_C < 951 ) C_04_hist[i]->Fill(bin_C,mean_range(waveform_C,p04_C,p05_C)-waveform_C.at(j));
+	      if ( p05_S > 0 && p05_S < 951 ) S_05_hist[i]->Fill(bin_S,mean_range(waveform_S,p05_S,p06_S)-waveform_S.at(j));
+	      if ( p05_C > 0 && p05_C < 951 ) C_05_hist[i]->Fill(bin_C,mean_range(waveform_C,p05_C,p06_C)-waveform_C.at(j));
+	      if ( p06_S > 0 && p06_S < 951 ) S_06_hist[i]->Fill(bin_S,mean_range(waveform_S,p06_S,p07_S)-waveform_S.at(j));
+	      if ( p06_C > 0 && p06_C < 951 ) C_06_hist[i]->Fill(bin_C,mean_range(waveform_C,p06_C,p07_C)-waveform_C.at(j));
+	      if ( p07_S > 0 && p07_S < 951 ) S_07_hist[i]->Fill(bin_S,mean_range(waveform_S,p07_S,p08_S)-waveform_S.at(j));
+	      if ( p07_C > 0 && p07_C < 951 ) C_07_hist[i]->Fill(bin_C,mean_range(waveform_C,p07_C,p08_C)-waveform_C.at(j));
+	      if ( p08_S > 0 && p08_S < 951 ) S_08_hist[i]->Fill(bin_S,mean_range(waveform_S,p08_S,p09_S)-waveform_S.at(j));
+	      if ( p08_C > 0 && p08_C < 951 ) C_08_hist[i]->Fill(bin_C,mean_range(waveform_C,p08_C,p09_C)-waveform_C.at(j));
+	      if ( p09_S > 0 && p09_S < 951 ) S_09_hist[i]->Fill(bin_S,mean_range(waveform_S,p09_S,p10_S)-waveform_S.at(j));
+	      if ( p09_C > 0 && p09_C < 951 ) C_09_hist[i]->Fill(bin_C,mean_range(waveform_C,p09_C,p10_C)-waveform_C.at(j));
+	      if ( p10_S > 0 && p10_S < 951 ) S_10_hist[i]->Fill(bin_S,mean_range(waveform_S,p10_S,p00_S)-waveform_S.at(j));
+	      if ( p10_C > 0 && p10_C < 951 ) C_10_hist[i]->Fill(bin_C,mean_range(waveform_C,p10_C,p00_C)-waveform_C.at(j));
 	    }
 	  }
 	  else {
