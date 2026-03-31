@@ -8,15 +8,55 @@
 #include <vector>
 #include <string>
 #include <cstdlib>
+#include <stdexcept>
+#include <map>
 
 namespace {
-std::string gCorrectionCSVPath = "../th2d_means.csv";
+enum class ADCorrectionMode
+{
+  PatchBased = 0,
+  ADCcorrectionEntire,
+  ADCcorrectionwoAVG
+};
+
+ADCorrectionMode gCorrectionMode = ADCorrectionMode::PatchBased;
+std::map<ADCorrectionMode, std::string> gCorrectionCSVPathByMode = {
+    {ADCorrectionMode::PatchBased, "../th2d_means.csv"},
+    {ADCorrectionMode::ADCcorrectionEntire, "../tb2025_updated.csv"},
+    {ADCorrectionMode::ADCcorrectionwoAVG, "../tb2025_updated.csv"}};
 bool gCorrectionLoaded = false;
 
 bool IsModuleTowerSCName(const TString &name)
 {
   return (name.BeginsWith("M") && name.Contains("-T") && (name.EndsWith("-S") || name.EndsWith("-C"))) ||
          (name.BeginsWith("T") && (name.EndsWith("-S") || name.EndsWith("-C")));
+}
+
+const char *ModeToName(ADCorrectionMode mode)
+{
+  switch (mode)
+  {
+  case ADCorrectionMode::PatchBased:
+    return "PatchBased";
+  case ADCorrectionMode::ADCcorrectionEntire:
+    return "ADCcorrectionEntire";
+  case ADCorrectionMode::ADCcorrectionwoAVG:
+    return "ADCcorrectionwoAVG";
+  }
+
+  return "Unknown";
+}
+
+ADCorrectionMode ParseModeName(const std::string &modeName)
+{
+  if (modeName.empty() || modeName == "PatchBased" || modeName == "ADCcorrection")
+    return ADCorrectionMode::PatchBased;
+  if (modeName == "ADCcorrectionEntire")
+    return ADCorrectionMode::ADCcorrectionEntire;
+  if (modeName == "ADCcorrectionwoAVG")
+    return ADCorrectionMode::ADCcorrectionwoAVG;
+
+  throw std::runtime_error("TBwaveform - unknown ADC correction mode: " + modeName);
 }
 
 int GetPatchIndex(int drsStop)
@@ -44,30 +84,54 @@ bool EnsureCorrectionLoaded()
   if (gCorrectionLoaded)
     return true;
 
-  gCorrectionLoaded = TBcid::LoadCorrectionFactorsFromCSV(gCorrectionCSVPath);
+  const auto it = gCorrectionCSVPathByMode.find(gCorrectionMode);
+  if (it == gCorrectionCSVPathByMode.end() || it->second.empty())
+    throw std::runtime_error(std::string("TBwaveform - correction CSV path is not configured for mode: ") + ModeToName(gCorrectionMode));
+
+  gCorrectionLoaded = TBcid::LoadCorrectionFactorsFromCSV(it->second);
   if (!gCorrectionLoaded)
-    std::cerr << "TBwaveform - failed to load correction CSV: " << gCorrectionCSVPath << std::endl;
+    throw std::runtime_error(std::string("TBwaveform - failed to load correction CSV for mode ") + ModeToName(gCorrectionMode) + ": " + it->second);
 
   return gCorrectionLoaded;
 }
 
-std::vector<float> BuildADCcorrectedWaveformF(const std::vector<short> &waveform, int drsStop, const TString &name)
+const std::vector<double> *GetCorrectionFactorsForCurrentMode(const TString &name, int drsStop, int forcedPatchIndex)
+{
+  switch (gCorrectionMode)
+  {
+  case ADCorrectionMode::PatchBased:
+  {
+    const int patchIndex = (forcedPatchIndex >= 0) ? forcedPatchIndex : GetPatchIndex(drsStop);
+    return TBcid::GetCachedCorrectionPtr(name, patchIndex);
+  }
+  case ADCorrectionMode::ADCcorrectionEntire:
+    return TBcid::GetCachedCorrectionPtr(Form("%s-mean", name.Data()));
+  case ADCorrectionMode::ADCcorrectionwoAVG:
+    return TBcid::GetCachedCorrectionPtr(name);
+  }
+
+  throw std::runtime_error("TBwaveform - unsupported ADC correction mode state");
+}
+
+template <typename ValueT>
+std::vector<ValueT> BuildADCcorrectedWaveformImpl(const std::vector<short> &waveform, int drsStop, const TString &name, int forcedPatchIndex = -1)
 {
   if (waveform.empty())
-    return std::vector<float>();
+    return std::vector<ValueT>();
 
-  std::vector<float> result(waveform.begin(), waveform.end());
+  std::vector<ValueT> result(waveform.begin(), waveform.end());
 
   if (!IsModuleTowerSCName(name))
     return result;
 
-  if (!EnsureCorrectionLoaded())
-    return result;
+  EnsureCorrectionLoaded();
 
-  const int patchIndex = GetPatchIndex(drsStop);
-  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
+  const std::vector<double> *factors = GetCorrectionFactorsForCurrentMode(name, drsStop, forcedPatchIndex);
   if (factors == nullptr || factors->empty())
-    return result;
+  {
+    throw std::runtime_error(std::string("TBwaveform - missing correction factors for channel ") + name.Data() +
+                             " in mode " + ModeToName(gCorrectionMode));
+  }
 
   for (size_t j = 0; j < waveform.size(); ++j)
   {
@@ -76,110 +140,50 @@ std::vector<float> BuildADCcorrectedWaveformF(const std::vector<short> &waveform
       bin -= 1024;
 
     if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
-      result[j] = static_cast<float>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
+      result[j] = static_cast<ValueT>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
   }
 
   return result;
+}
+
+std::vector<float> BuildADCcorrectedWaveformF(const std::vector<short> &waveform, int drsStop, const TString &name)
+{
+  return BuildADCcorrectedWaveformImpl<float>(waveform, drsStop, name);
 }
 
 std::vector<float> BuildADCcorrectedWaveformF(const std::vector<short> &waveform, int drsStop, const TString &name,const int index)
 {
-  if (waveform.empty())
-    return std::vector<float>();
-
-  std::vector<float> result(waveform.begin(), waveform.end());
-
-  if (!IsModuleTowerSCName(name))
-    return result;
-
-  if (!EnsureCorrectionLoaded())
-    return result;
-
-  const int patchIndex = index;
-  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
-  if (factors == nullptr || factors->empty())
-    return result;
-
-  for (size_t j = 0; j < waveform.size(); ++j)
-  {
-    int bin = static_cast<int>(j) + drsStop + 1;
-    if (bin >= 1024)
-      bin -= 1024;
-
-    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
-      result[j] = static_cast<float>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
-  }
-
-  return result;
+  return BuildADCcorrectedWaveformImpl<float>(waveform, drsStop, name, index);
 }
 
 std::vector<double> BuildADCcorrectedWaveform(const std::vector<short> &waveform, int drsStop, const TString &name)
 {
-  if (waveform.empty())
-    return std::vector<double>();
-
-  std::vector<double> result(waveform.begin(), waveform.end());
-
-  if (!IsModuleTowerSCName(name))
-    return result;
-
-  if (!EnsureCorrectionLoaded())
-    return result;
-
-  const int patchIndex = GetPatchIndex(drsStop);
-  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
-  if (factors == nullptr || factors->empty())
-    return result;
-
-  for (size_t j = 0; j < waveform.size(); ++j)
-  {
-    int bin = static_cast<int>(j) + drsStop + 1;
-    if (bin >= 1024)
-      bin -= 1024;
-
-    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
-      result[j] = static_cast<double>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
-  }
-
-  return result;
+  return BuildADCcorrectedWaveformImpl<double>(waveform, drsStop, name);
 }
 
 std::vector<double> BuildADCcorrectedWaveform(const std::vector<short> &waveform, int drsStop, const TString &name,const int index)
 {
-  if (waveform.empty())
-    return std::vector<double>();
-
-  std::vector<double> result(waveform.begin(), waveform.end());
-
-  if (!IsModuleTowerSCName(name))
-    return result;
-
-  if (!EnsureCorrectionLoaded())
-    return result;
-
-  const int patchIndex = index;
-  const std::vector<double> *factors = TBcid::GetCachedCorrectionPtr(name, patchIndex);
-  if (factors == nullptr || factors->empty())
-    return result;
-
-  for (size_t j = 0; j < waveform.size(); ++j)
-  {
-    int bin = static_cast<int>(j) + drsStop + 1;
-    if (bin >= 1024)
-      bin -= 1024;
-
-    if (bin >= 0 && static_cast<size_t>(bin) < factors->size())
-      result[j] = static_cast<double>(waveform[j] + (*factors)[static_cast<size_t>(bin)]);
-  }
-
-  return result;
+  return BuildADCcorrectedWaveformImpl<double>(waveform, drsStop, name, index);
 }
 
 }
 
 void TBwaveform::SetCorrectionCSVPath(const std::string &csvPath)
 {
-  gCorrectionCSVPath = csvPath;
+  gCorrectionCSVPathByMode[ADCorrectionMode::PatchBased] = csvPath;
+  gCorrectionLoaded = false;
+}
+
+void TBwaveform::SetCorrectionMode(const std::string &modeName)
+{
+  gCorrectionMode = ParseModeName(modeName);
+  gCorrectionLoaded = false;
+}
+
+void TBwaveform::SetCorrectionCSVPathForMode(const std::string &modeName, const std::string &csvPath)
+{
+  const ADCorrectionMode mode = ParseModeName(modeName);
+  gCorrectionCSVPathByMode[mode] = csvPath;
   gCorrectionLoaded = false;
 }
 

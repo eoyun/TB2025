@@ -28,9 +28,11 @@ public:
   static bool HasCachedCorrection(const TString &name, int patch);
   static bool GetCachedCorrection(const TString &name, int patch, std::vector<double> &factors);
   static const std::vector<double> *GetCachedCorrectionPtr(const TString &name, int patch);
+  static const std::vector<double> *GetCachedCorrectionPtr(const TString &name);
 
 private:
   static std::string BuildCorrectionKey(const TString &name, int patch);
+  static std::string BuildCorrectionKey(const TString &name);
 
   int mid_;
   int channel_;

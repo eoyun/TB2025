@@ -24,6 +24,20 @@ std::string Trim(const std::string &v)
 
   return v.substr(start, end - start);
 }
+
+bool EndsWith(const std::string &value, const std::string &suffix)
+{
+  return value.size() >= suffix.size() &&
+         value.compare(value.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+bool IsCorrectionChannelRow(const std::string &rowName)
+{
+  if (rowName.find("_S_") != std::string::npos || rowName.find("_C_") != std::string::npos)
+    return true;
+
+  return EndsWith(rowName, "_S") || EndsWith(rowName, "_C");
+}
 }
 
 std::string TBcid::BuildCorrectionKey(const TString &name, int patch)
@@ -32,6 +46,14 @@ std::string TBcid::BuildCorrectionKey(const TString &name, int patch)
   key.ReplaceAll("-", "_");
 
   return Form("%s_%02d", key.Data(), patch);
+}
+
+std::string TBcid::BuildCorrectionKey(const TString &name)
+{
+  TString key = name;
+  key.ReplaceAll("-", "_");
+
+  return std::string(key.Data());
 }
 
 bool TBcid::LoadCorrectionFactorsFromCSV(const std::string &csvPath)
@@ -68,7 +90,7 @@ bool TBcid::LoadCorrectionFactorsFromCSV(const std::string &csvPath)
     firstLine = false;
 
     const std::string &rowName = tokens.at(0);
-    if (rowName.find("_S_") == std::string::npos && rowName.find("_C_") == std::string::npos)
+    if (!IsCorrectionChannelRow(rowName))
       continue;
 
     std::vector<double> factors;
@@ -116,6 +138,18 @@ const std::vector<double> *TBcid::GetCachedCorrectionPtr(const TString &name, in
     return nullptr;
 
   const auto it = correctionFactorsCache_.find(BuildCorrectionKey(name, patch));
+  if (it == correctionFactorsCache_.end())
+    return nullptr;
+
+  return &(it->second);
+}
+
+const std::vector<double> *TBcid::GetCachedCorrectionPtr(const TString &name)
+{
+  if (!correctionFactorsLoaded_)
+    return nullptr;
+
+  const auto it = correctionFactorsCache_.find(BuildCorrectionKey(name));
   if (it == correctionFactorsCache_.end())
     return nullptr;
 

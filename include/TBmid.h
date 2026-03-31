@@ -39,6 +39,8 @@ public:
   std::vector<double> ADCpedcorrectedWaveform(int index) const;
 
   static void SetCorrectionCSVPath(const std::string &csvPath);
+  static void SetCorrectionMode(const std::string &modeName);
+  static void SetCorrectionCSVPathForMode(const std::string &modeName, const std::string &csvPath);
 
   void fill(unsigned int bin, short val) { waveform_.at(bin) = val; }
 
