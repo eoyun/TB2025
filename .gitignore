@@ -1,5 +1,6 @@
 ./analysis/test/*.root
 ./analysis/*/*.png
 *.root
+*.png
 build
 install
