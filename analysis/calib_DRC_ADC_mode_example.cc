@@ -798,25 +798,25 @@ int main(int argc, char *argv[]) {
         std::vector< std::vector<float> > wave_M8_C; std::vector< std::vector<float> > wave_M8_S;
         std::vector< std::vector<float> > wave_M9_C; std::vector< std::vector<float> > wave_M9_S;
         for(int tower = 0; tower < 4; tower++) {
-            wave_M1_C.emplace_back( anEvt.GetData(cid_M1_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M2_C.emplace_back( anEvt.GetData(cid_M2_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M3_C.emplace_back( anEvt.GetData(cid_M3_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M4_C.emplace_back( anEvt.GetData(cid_M4_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M5_C.emplace_back( anEvt.GetData(cid_M5_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M6_C.emplace_back( anEvt.GetData(cid_M6_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M7_C.emplace_back( anEvt.GetData(cid_M7_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M8_C.emplace_back( anEvt.GetData(cid_M8_C.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M9_C.emplace_back( anEvt.GetData(cid_M9_C.at(tower)).ADCcorrectedWaveform() ); 
+            wave_M1_C.emplace_back( anEvt.GetData(cid_M1_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M2_C.emplace_back( anEvt.GetData(cid_M2_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M3_C.emplace_back( anEvt.GetData(cid_M3_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M4_C.emplace_back( anEvt.GetData(cid_M4_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M5_C.emplace_back( anEvt.GetData(cid_M5_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M6_C.emplace_back( anEvt.GetData(cid_M6_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M7_C.emplace_back( anEvt.GetData(cid_M7_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M8_C.emplace_back( anEvt.GetData(cid_M8_C.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M9_C.emplace_back( anEvt.GetData(cid_M9_C.at(tower)).ADCcorrectedWaveformF() ); 
             
-            wave_M1_S.emplace_back( anEvt.GetData(cid_M1_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M2_S.emplace_back( anEvt.GetData(cid_M2_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M3_S.emplace_back( anEvt.GetData(cid_M3_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M4_S.emplace_back( anEvt.GetData(cid_M4_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M5_S.emplace_back( anEvt.GetData(cid_M5_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M6_S.emplace_back( anEvt.GetData(cid_M6_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M7_S.emplace_back( anEvt.GetData(cid_M7_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M8_S.emplace_back( anEvt.GetData(cid_M8_S.at(tower)).ADCcorrectedWaveform() ); 
-            wave_M9_S.emplace_back( anEvt.GetData(cid_M9_S.at(tower)).ADCcorrectedWaveform() ); 
+            wave_M1_S.emplace_back( anEvt.GetData(cid_M1_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M2_S.emplace_back( anEvt.GetData(cid_M2_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M3_S.emplace_back( anEvt.GetData(cid_M3_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M4_S.emplace_back( anEvt.GetData(cid_M4_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M5_S.emplace_back( anEvt.GetData(cid_M5_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M6_S.emplace_back( anEvt.GetData(cid_M6_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M7_S.emplace_back( anEvt.GetData(cid_M7_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M8_S.emplace_back( anEvt.GetData(cid_M8_S.at(tower)).ADCcorrectedWaveformF() ); 
+            wave_M9_S.emplace_back( anEvt.GetData(cid_M9_S.at(tower)).ADCcorrectedWaveformF() ); 
         } 
         
         std::vector<float> intADC_M1_C; std::vector<float> intADC_M1_S;
@@ -1655,7 +1655,7 @@ int main(int argc, char *argv[]) {
     hist_totalEdepScaled_Comb_after->Fit("fit_reso_Comb");
     
     // Output file
-    std::string outFile = "./Calib_ADC/Calib_ADC_Run_" + std::to_string(fRunNum) + ".root";
+    std::string outFile = "./Calib_ADC/Calib_ADC_Run_" + std::to_string(fRunNum) +"_" +correctionMode +".root";
     TFile* outputRoot = new TFile(outFile.c_str(), "RECREATE");
     outputRoot->cd();
     

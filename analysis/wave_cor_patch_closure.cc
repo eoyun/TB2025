@@ -51,7 +51,7 @@ std::array<int, kPatchCount> BuildPatchStarts(int drs_stop) {
     return starts;
 }
 
-double MeanRangeLikeTestDrsStop(const std::vector<double>& waveform, int p00, int p01) {
+double MeanRangeLikeTestDrsStop(const std::vector<short>& waveform, int p00, int p01) {
     if (waveform.empty()) return 0.0;
     p00 = Wrap1024(p00);
     p01 = Wrap1024(p01);
@@ -63,7 +63,7 @@ double MeanRangeLikeTestDrsStop(const std::vector<double>& waveform, int p00, in
     while (true) {
         idx = Wrap1024(idx);
         if (IsValidWaveIndex(idx)) {
-            sum += waveform.at(idx);
+            sum += (double) waveform.at(idx);
             ++count;
         }
         if (idx == p01) break;
@@ -301,7 +301,7 @@ int main(int argc, char** argv) {
 	// For closure test, start from ADC-corrected waveform (before pedestal correction)
 	// and build the patch-based pedestal correction explicitly, following
 	// the patch definition and bad-bin handling of test_drs_stop.cc.
-	std::vector<double> waveuncor = M4_T2_S_wave.ADCcorrectedWaveform();
+	std::vector<short> waveuncor = M4_T2_S_wave.waveform();
 	std::array<int, kPatchCount> patch_starts = BuildPatchStarts(drs_stop);
 	std::array<double, kPatchCount> patch_mean{};
 	for (int p = 0; p < kPatchCount; ++p) {
