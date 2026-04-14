@@ -15,15 +15,15 @@ namespace {
 enum class ADCorrectionMode
 {
   PatchBased = 0,
-  ADCcorrectionEntire,
-  ADCcorrectionwoAVG
+  AvgRefLine,
+  FixRefLine
 };
 
 ADCorrectionMode gCorrectionMode = ADCorrectionMode::PatchBased;
 std::map<ADCorrectionMode, std::string> gCorrectionCSVPathByMode = {
     {ADCorrectionMode::PatchBased, "../th2d_means.csv"},
-    {ADCorrectionMode::ADCcorrectionEntire, "../tb2025_updated.csv"},
-    {ADCorrectionMode::ADCcorrectionwoAVG, "../tb2025_updated.csv"}};
+    {ADCorrectionMode::AvgRefLine, "../correction_entire.csv"},
+    {ADCorrectionMode::FixRefLine, "../correction_entire.csv"}};
 bool gCorrectionLoaded = false;
 
 bool IsModuleTowerSCName(const TString &name)
@@ -38,10 +38,10 @@ const char *ModeToName(ADCorrectionMode mode)
   {
   case ADCorrectionMode::PatchBased:
     return "PatchBased";
-  case ADCorrectionMode::ADCcorrectionEntire:
-    return "ADCcorrectionEntire";
-  case ADCorrectionMode::ADCcorrectionwoAVG:
-    return "ADCcorrectionwoAVG";
+  case ADCorrectionMode::AvgRefLine:
+    return "AvgRefLine";
+  case ADCorrectionMode::FixRefLine:
+    return "FixRefLine";
   }
 
   return "Unknown";
@@ -51,10 +51,10 @@ ADCorrectionMode ParseModeName(const std::string &modeName)
 {
   if (modeName.empty() || modeName == "PatchBased" || modeName == "ADCcorrection")
     return ADCorrectionMode::PatchBased;
-  if (modeName == "ADCcorrectionEntire")
-    return ADCorrectionMode::ADCcorrectionEntire;
-  if (modeName == "ADCcorrectionwoAVG")
-    return ADCorrectionMode::ADCcorrectionwoAVG;
+  if (modeName == "AvgRefLine")
+    return ADCorrectionMode::AvgRefLine;
+  if (modeName == "FixRefLine")
+    return ADCorrectionMode::FixRefLine;
 
   throw std::runtime_error("TBwaveform - unknown ADC correction mode: " + modeName);
 }
@@ -104,9 +104,9 @@ const std::vector<double> *GetCorrectionFactorsForCurrentMode(const TString &nam
     const int patchIndex = (forcedPatchIndex >= 0) ? forcedPatchIndex : GetPatchIndex(drsStop);
     return TBcid::GetCachedCorrectionPtr(name, patchIndex);
   }
-  case ADCorrectionMode::ADCcorrectionEntire:
+  case ADCorrectionMode::AvgRefLine:
     return TBcid::GetCachedCorrectionPtr(Form("%s-mean", name.Data()));
-  case ADCorrectionMode::ADCcorrectionwoAVG:
+  case ADCorrectionMode::FixRefLine:
     return TBcid::GetCachedCorrectionPtr(name);
   }
 

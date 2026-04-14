@@ -152,10 +152,10 @@ int main(int argc, char *argv[]) {
         isKEK = (std::stoi(argv[3]) != 0);
 
     const std::string mappingPath = isKEK ? "../mapping/mapping_KEK_v1.root" : "../mapping/mapping_TB2025_v1.root";
-    const std::string correctionMode = (argc > 4) ? argv[4] : "PatchBased";
+    const std::string correctionMode = (argc > 4) ? argv[4] : "FixRefLine";
     const std::string correctionCSVPath = (argc > 5)
                                               ? argv[5]
-                                              : (isKEK ? "../kek_mean.csv" : "../tb2025_updated.csv");
+                                              : (isKEK ? "../kek_mean.csv" : "../correction_entire.csv");
     const std::string dataPath = isKEK ? "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/KEK_DRC_TB_Data/"
                                        : "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_Data/";
     
@@ -166,18 +166,11 @@ int main(int argc, char *argv[]) {
     TButility util = TButility();
     util.LoadMapping(mappingPath);
     TBwaveform::SetCorrectionMode(correctionMode);
-    if (correctionMode == "PatchBased" || correctionMode == "ADCcorrection")
-    {
-        TBwaveform::SetCorrectionCSVPath(correctionCSVPath);
-    }
-    else
-    {
-        // Entire mode expects keys like Mx_Tx_S/C_mean,
-        // woAVG mode expects keys like Mx_Tx_S/C.
-        // Both are loaded from the same CSV file in this example.
-        TBwaveform::SetCorrectionCSVPathForMode("ADCcorrectionEntire", correctionCSVPath);
-        TBwaveform::SetCorrectionCSVPathForMode("ADCcorrectionwoAVG", correctionCSVPath);
-    }
+    // Fixline mode expects keys like Mx_Tx_S/C_mean,
+    // Avgline mode expects keys like Mx_Tx_S/C.
+    // Both are loaded from the same CSV file in this example.
+    TBwaveform::SetCorrectionCSVPathForMode("AvgRefLine", correctionCSVPath);
+    TBwaveform::SetCorrectionCSVPathForMode("FixRefLine", correctionCSVPath);
     
     TFile* f_DWC = TFile::Open((TString)("./DWC/DWC_Run_" + std::to_string(fRunNum) + ".root"), "READ");
     TH2D* h_DWC1_pos   = (TH2D*) f_DWC->Get("dwc1_pos");
