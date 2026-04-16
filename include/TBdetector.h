@@ -25,6 +25,8 @@ public:
   void print() const;
 
   static bool LoadCorrectionFactorsFromCSV(const std::string &csvPath);
+  static bool LoadCorrectionFactorsFromROOT(const std::string &rootPath);
+  static bool LoadCorrectionFactors(const std::string &path, const std::string &sourceType);
   static bool HasCachedCorrection(const TString &name, int patch);
   static bool GetCachedCorrection(const TString &name, int patch, std::vector<double> &factors);
   static const std::vector<double> *GetCachedCorrectionPtr(const TString &name, int patch);

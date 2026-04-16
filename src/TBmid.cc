@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <map>
+#include <cctype>
 
 namespace {
 enum class ADCorrectionMode
@@ -19,11 +20,22 @@ enum class ADCorrectionMode
   FixRefLine
 };
 
+enum class CorrectionSource
+{
+  CSV = 0,
+  ROOT
+};
+
 ADCorrectionMode gCorrectionMode = ADCorrectionMode::PatchBased;
 std::map<ADCorrectionMode, std::string> gCorrectionCSVPathByMode = {
     {ADCorrectionMode::PatchBased, "../th2d_means.csv"},
     {ADCorrectionMode::AvgRefLine, "../correction_entire.csv"},
     {ADCorrectionMode::FixRefLine, "../correction_entire.csv"}};
+std::map<ADCorrectionMode, std::string> gCorrectionROOTPathByMode = {
+    {ADCorrectionMode::PatchBased, "../th2d_means.root"},
+    {ADCorrectionMode::AvgRefLine, "../correction_entire.root"},
+    {ADCorrectionMode::FixRefLine, "../correction_entire.root"}};
+CorrectionSource gCorrectionSource = CorrectionSource::CSV;
 bool gCorrectionLoaded = false;
 
 bool IsModuleTowerSCName(const TString &name)
@@ -59,6 +71,42 @@ ADCorrectionMode ParseModeName(const std::string &modeName)
   throw std::runtime_error("TBwaveform - unknown ADC correction mode: " + modeName);
 }
 
+const char *SourceToName(CorrectionSource source)
+{
+  switch (source)
+  {
+  case CorrectionSource::CSV:
+    return "CSV";
+  case CorrectionSource::ROOT:
+    return "ROOT";
+  }
+
+  return "Unknown";
+}
+
+CorrectionSource ParseSourceName(const std::string &sourceName)
+{
+  std::string normalized;
+  normalized.reserve(sourceName.size());
+  for (char ch : sourceName)
+    normalized.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(ch))));
+
+  if (normalized.empty() || normalized == "CSV")
+    return CorrectionSource::CSV;
+  if (normalized == "ROOT")
+    return CorrectionSource::ROOT;
+
+  throw std::runtime_error("TBwaveform - unknown correction source: " + sourceName + " (supported: CSV, ROOT)");
+}
+
+std::map<ADCorrectionMode, std::string> &PathMapForSource(CorrectionSource source)
+{
+  if (source == CorrectionSource::CSV)
+    return gCorrectionCSVPathByMode;
+
+  return gCorrectionROOTPathByMode;
+}
+
 int GetPatchIndex(int drsStop)
 {
   const int points[11] = {1, 94, 187, 280, 373, 466, 560, 653, 746, 839, 932};
@@ -84,13 +132,21 @@ bool EnsureCorrectionLoaded()
   if (gCorrectionLoaded)
     return true;
 
-  const auto it = gCorrectionCSVPathByMode.find(gCorrectionMode);
-  if (it == gCorrectionCSVPathByMode.end() || it->second.empty())
-    throw std::runtime_error(std::string("TBwaveform - correction CSV path is not configured for mode: ") + ModeToName(gCorrectionMode));
+  const auto &pathMap = PathMapForSource(gCorrectionSource);
+  const auto it = pathMap.find(gCorrectionMode);
+  if (it == pathMap.end() || it->second.empty())
+  {
+    throw std::runtime_error(std::string("TBwaveform - correction path is not configured for mode ")
+                             + ModeToName(gCorrectionMode) + " and source " + SourceToName(gCorrectionSource));
+  }
 
-  gCorrectionLoaded = TBcid::LoadCorrectionFactorsFromCSV(it->second);
+  gCorrectionLoaded = TBcid::LoadCorrectionFactors(it->second, SourceToName(gCorrectionSource));
   if (!gCorrectionLoaded)
-    throw std::runtime_error(std::string("TBwaveform - failed to load correction CSV for mode ") + ModeToName(gCorrectionMode) + ": " + it->second);
+  {
+    throw std::runtime_error(std::string("TBwaveform - failed to load correction factors for mode ")
+                             + ModeToName(gCorrectionMode) + ", source " + SourceToName(gCorrectionSource)
+                             + ", path " + it->second);
+  }
 
   return gCorrectionLoaded;
 }
@@ -180,10 +236,30 @@ void TBwaveform::SetCorrectionMode(const std::string &modeName)
   gCorrectionLoaded = false;
 }
 
+void TBwaveform::SetCorrectionSource(const std::string &sourceType)
+{
+  gCorrectionSource = ParseSourceName(sourceType);
+  gCorrectionLoaded = false;
+}
+
+void TBwaveform::SetCorrectionPathForMode(const std::string &modeName, const std::string &path)
+{
+  const ADCorrectionMode mode = ParseModeName(modeName);
+  PathMapForSource(gCorrectionSource)[mode] = path;
+  gCorrectionLoaded = false;
+}
+
 void TBwaveform::SetCorrectionCSVPathForMode(const std::string &modeName, const std::string &csvPath)
 {
   const ADCorrectionMode mode = ParseModeName(modeName);
   gCorrectionCSVPathByMode[mode] = csvPath;
+  gCorrectionLoaded = false;
+}
+
+void TBwaveform::SetCorrectionROOTPathForMode(const std::string &modeName, const std::string &rootPath)
+{
+  const ADCorrectionMode mode = ParseModeName(modeName);
+  gCorrectionROOTPathByMode[mode] = rootPath;
   gCorrectionLoaded = false;
 }
 
