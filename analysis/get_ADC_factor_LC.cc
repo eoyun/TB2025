@@ -112,8 +112,9 @@ int main(int argc, char** argv) {
     float cut_CC1  = 60.;   // PID cut for CC1 (PeakADC)
     float cut_CC2  = 100.;  // PID cut for CC2 (PeakADC)
     
-    float cut_PS = 600.;   // PID cut for PS (PeakADC)
-    float cut_MC = 35.;     // PID cut for MC (PeakADC)
+    float cut_PS1 = 50.;   // PID cut for PS (PeakADC)
+    float cut_PS2 = 300.;   // PID cut for PS (PeakADC)
+    float cut_MC = 38.;     // PID cut for MC (PeakADC)
     
     float cut_DWC = 4;      // Beam geometry cut for DWC
     
@@ -185,7 +186,7 @@ int main(int argc, char** argv) {
     std::array<TH2D*, 16> LC_mean_hist{};
 
     for (int i = 0; i < 16; ++i) {
-        TBcid cid_tmp_LC = util.GetCID(Form("LC%d", LC_num[i]);
+        TBcid cid_tmp_LC = util.GetCID(Form("LC%d", LC_num[i]));
         LC_collector.push_back(cid_tmp_LC);
 
         LC_hist[i] = new TH2D(
@@ -281,9 +282,11 @@ int main(int argc, char** argv) {
         hist_DWC_x_corr_corrected->Fill(DWC1_corrected_pos.at(0), DWC2_corrected_pos.at(0));
         hist_DWC_y_corr_corrected->Fill(DWC1_corrected_pos.at(1), DWC2_corrected_pos.at(1));
 
-        if ( !(dwcCorrelationCut(DWC1_corrected_pos, DWC2_corrected_pos, cut_DWC)) ) continue;
-        if ( signal_PS < cut_PS ) continue; // Select above 3 mip peak
-        if ( signal_MC > cut_MC ) continue; // Select only pedestals
+        if (!(dwcCorrelationCut(DWC1_corrected_pos, DWC2_corrected_pos, cut_DWC))) continue;
+        // if ( std::abs(DWC1_corrected_pos.at(0))>5 || std::abs(DWC1_corrected_pos.at(1))>5) continue;
+        // if ( std::abs(DWC2_corrected_pos.at(0))>5 || std::abs(DWC2_corrected_pos.at(1))>5) continue;
+        if (signal_PS < cut_PS1 || signal_PS > cut_PS2) continue;
+        if (signal_MC < cut_MC) continue;
 
         hist_CC1_after->Fill(signal_CC1);
         hist_CC2_after->Fill(signal_CC2);
@@ -307,7 +310,7 @@ int main(int argc, char** argv) {
 
 
             fill_waveform_mean_histogram(
-                waveform_LC, drs_stop_LC, max_valid_sample, LC_hist[i], LC_mean_hist[i]);
+                waveform_LC, drs_stop_LC, kDefaultMaxValidSample, LC_hist[i], LC_mean_hist[i]);
         }
 
         // TBwaveform wave_M1_T1_S = aEvent.GetData(cid_M1_T1_S);

@@ -187,11 +187,49 @@ int main(int argc, char** argv) {
 
     std::vector<TBcid> S_collector;
     std::vector<TBcid> C_collector;
+    
+    std::vector<TBcid> MCP_S_collector;
+    std::vector<TBcid> MCP_C_collector;
 
+    std::array<TH2D*, 64> MCP_S_hist{};
+    std::array<TH2D*, 64> MCP_C_hist{};
+    std::array<TH2D*, 64> MCP_S_mean_hist{};
+    std::array<TH2D*, 64> MCP_C_mean_hist{};
     std::array<TH2D*, 36> S_hist{};
     std::array<TH2D*, 36> C_hist{};
     std::array<TH2D*, 36> S_mean_hist{};
     std::array<TH2D*, 36> C_mean_hist{};
+
+    for (int i = 0; i < 64; ++i) {
+        TBcid cid_tmp_S = util.GetCID(Form("S%d", i+1));
+        TBcid cid_tmp_C = util.GetCID(Form("C%d", i+1));
+        MCP_S_collector.push_back(cid_tmp_S);
+        MCP_C_collector.push_back(cid_tmp_C);
+
+        MCP_S_hist[i] = new TH2D(
+            Form("S%d", i+1),
+            ";DRS cell;ADC",
+            kNumCells, 0, kNumCells,
+            1000, -500, 500);
+
+        MCP_C_hist[i] = new TH2D(
+            Form("C%d", i+1),
+            ";DRS cell;ADC",
+            kNumCells, 0, kNumCells,
+            1000, -500, 500);
+
+        MCP_S_mean_hist[i] = new TH2D(
+            Form("S%d_mean", i+1),
+            ";DRS cell;#mu - ADC",
+            kNumCells, 0, kNumCells,
+            kResidualHistYBins, kResidualHistYMin, kResidualHistYMax);
+
+        MCP_C_mean_hist[i] = new TH2D(
+            Form("C%d_mean", i+1),
+            ";DRS cell;#mu - ADC",
+            kNumCells, 0, kNumCells,
+            kResidualHistYBins, kResidualHistYMin, kResidualHistYMax);
+    }
 
     for (int i = 0; i < 36; ++i) {
         TBcid cid_tmp_S = util.GetCID(Form("M%d-T%d-S", i % 9 + 1, i / 9 + 1));
@@ -226,7 +264,7 @@ int main(int argc, char** argv) {
 
     // MID: 3-7: PMT modules, MID 9: LC, MID 10: Aux(CC1, CC2, PS, TC, MC), MID 12: Triggers (T1, T2, T1NIM, T2NIM, Coin), MID 14-17: MCP micro, MID 18: DWC
     // TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/Volumes/Macintosh HD-1/Users/yhep/scratch/YUdaq", {3, 4, 5, 6, 7, 9, 10, 12, 18});
-    TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_Data/", {3, 4, 5, 6, 7, 10, 12, 18});
+    TBread<TBwaveform> readerWave = TBread<TBwaveform>(fRunNum, fMaxEvent, fMaxFile, false, "/pnfs/knu.ac.kr/data/cms/store/user/sungwon/2025_DRC_TB_Data/", {3, 4, 5, 6, 7, 10, 12, 14, 15, 16, 17, 18});
 
     // Set Maximum event
     if (fMaxEvent == -1)
@@ -341,6 +379,24 @@ int main(int argc, char** argv) {
                 waveform_C, drs_stop_C, max_valid_sample, C_hist[i], C_mean_hist[i]);
         }
 
+        for (int i = 0; i < 64; ++i) {
+            TBwaveform S_tmp = aEvent.GetData(MCP_S_collector.at(i));
+            TBwaveform C_tmp = aEvent.GetData(MCP_C_collector.at(i));
+
+            const int drs_stop_S = S_tmp.drs_stop();
+            const int drs_stop_C = C_tmp.drs_stop();
+
+            const std::vector<short> waveform_S = S_tmp.waveform();
+            const std::vector<short> waveform_C = C_tmp.waveform();
+
+            const int max_valid_sample = get_max_valid_sample(i);
+
+            fill_waveform_mean_histogram(
+                waveform_S, drs_stop_S, max_valid_sample, MCP_S_hist[i], MCP_S_mean_hist[i]);
+
+            fill_waveform_mean_histogram(
+                waveform_C, drs_stop_C, max_valid_sample, MCP_C_hist[i], MCP_C_mean_hist[i]);
+        }
         // TBwaveform wave_M1_T1_S = aEvent.GetData(cid_M1_T1_S);
         // int drs_stop = wave_M1_T1_S.drs_stop();
         // std::cout << "test : " << iEvt << " | " << drs_stop << std::endl;
@@ -372,6 +428,13 @@ int main(int argc, char** argv) {
     hist_DWC_x_corr_after->Write();
     hist_DWC_y_corr_after->Write();
     
+    for (int i = 0; i < 64; ++i) {
+        MCP_S_hist[i]->Write();
+        MCP_C_hist[i]->Write();
+        MCP_S_mean_hist[i]->Write();
+        MCP_C_mean_hist[i]->Write();
+    }
+
     for (int i = 0; i < 36; ++i) {
         S_hist[i]->Write();
         C_hist[i]->Write();
