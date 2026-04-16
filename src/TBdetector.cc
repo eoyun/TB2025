@@ -4,6 +4,12 @@
 #include <sstream>
 #include <cctype>
 #include <cstdlib>
+#include <memory>
+#include <stdexcept>
+
+#include "TFile.h"
+#include "TKey.h"
+#include "TH1.h"
 
 #include "TBdetector.h"
 
@@ -37,6 +43,17 @@ bool IsCorrectionChannelRow(const std::string &rowName)
     return true;
 
   return EndsWith(rowName, "_S") || EndsWith(rowName, "_C");
+}
+
+std::string NormalizeSourceType(const std::string &sourceType)
+{
+  std::string normalized;
+  normalized.reserve(sourceType.size());
+
+  for (char ch : sourceType)
+    normalized.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(ch))));
+
+  return normalized;
 }
 }
 
@@ -109,6 +126,64 @@ bool TBcid::LoadCorrectionFactorsFromCSV(const std::string &csvPath)
 
   correctionFactorsLoaded_ = true;
   return !correctionFactorsCache_.empty();
+}
+
+bool TBcid::LoadCorrectionFactorsFromROOT(const std::string &rootPath)
+{
+  correctionFactorsCache_.clear();
+
+  std::unique_ptr<TFile> fin(TFile::Open(rootPath.c_str(), "READ"));
+  if (!fin || fin->IsZombie())
+    return false;
+
+  TIter next(fin->GetListOfKeys());
+  TKey *key = nullptr;
+
+  // ROOT format assumption:
+  // - one TH1 per correction key (same naming convention as CSV "name" column)
+  // - per-bin correction value stored in bin content
+  while ((key = dynamic_cast<TKey *>(next())) != nullptr)
+  {
+    TObject *obj = key->ReadObj();
+    TH1 *hist = dynamic_cast<TH1 *>(obj);
+    if (hist == nullptr)
+    {
+      delete obj;
+      continue;
+    }
+
+    const std::string histName = hist->GetName();
+    if (!IsCorrectionChannelRow(histName))
+    {
+      delete obj;
+      continue;
+    }
+
+    std::vector<double> factors;
+    factors.reserve(static_cast<size_t>(hist->GetNbinsX()));
+    for (int bin = 1; bin <= hist->GetNbinsX(); ++bin)
+      factors.push_back(hist->GetBinContent(bin));
+
+    if (!factors.empty())
+      correctionFactorsCache_[histName] = factors;
+
+    delete obj;
+  }
+
+  correctionFactorsLoaded_ = true;
+  return !correctionFactorsCache_.empty();
+}
+
+bool TBcid::LoadCorrectionFactors(const std::string &path, const std::string &sourceType)
+{
+  const std::string source = NormalizeSourceType(sourceType);
+
+  if (source.empty() || source == "CSV")
+    return LoadCorrectionFactorsFromCSV(path);
+  if (source == "ROOT")
+    return LoadCorrectionFactorsFromROOT(path);
+
+  throw std::runtime_error("TBcid - unsupported correction source type: " + sourceType);
 }
 
 bool TBcid::HasCachedCorrection(const TString &name, int patch)

@@ -40,7 +40,10 @@ public:
 
   static void SetCorrectionCSVPath(const std::string &csvPath);
   static void SetCorrectionMode(const std::string &modeName);
+  static void SetCorrectionSource(const std::string &sourceType);
+  static void SetCorrectionPathForMode(const std::string &modeName, const std::string &path);
   static void SetCorrectionCSVPathForMode(const std::string &modeName, const std::string &csvPath);
+  static void SetCorrectionROOTPathForMode(const std::string &modeName, const std::string &rootPath);
 
   void fill(unsigned int bin, short val) { waveform_.at(bin) = val; }
 
