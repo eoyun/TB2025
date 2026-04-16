@@ -15,7 +15,7 @@
 namespace {
 enum class ADCorrectionMode
 {
-  PatchBased = 0,
+  None = 0,
   AvgRefLine,
   FixRefLine
 };
@@ -26,13 +26,11 @@ enum class CorrectionSource
   ROOT
 };
 
-ADCorrectionMode gCorrectionMode = ADCorrectionMode::PatchBased;
+ADCorrectionMode gCorrectionMode = ADCorrectionMode::None;
 std::map<ADCorrectionMode, std::string> gCorrectionCSVPathByMode = {
-    {ADCorrectionMode::PatchBased, "../th2d_means.csv"},
     {ADCorrectionMode::AvgRefLine, "../correction_entire.csv"},
     {ADCorrectionMode::FixRefLine, "../correction_entire.csv"}};
 std::map<ADCorrectionMode, std::string> gCorrectionROOTPathByMode = {
-    {ADCorrectionMode::PatchBased, "../th2d_means.root"},
     {ADCorrectionMode::AvgRefLine, "../correction_entire.root"},
     {ADCorrectionMode::FixRefLine, "../correction_entire.root"}};
 CorrectionSource gCorrectionSource = CorrectionSource::CSV;
@@ -48,8 +46,8 @@ const char *ModeToName(ADCorrectionMode mode)
 {
   switch (mode)
   {
-  case ADCorrectionMode::PatchBased:
-    return "PatchBased";
+  case ADCorrectionMode::None:
+    return "None";
   case ADCorrectionMode::AvgRefLine:
     return "AvgRefLine";
   case ADCorrectionMode::FixRefLine:
@@ -61,8 +59,8 @@ const char *ModeToName(ADCorrectionMode mode)
 
 ADCorrectionMode ParseModeName(const std::string &modeName)
 {
-  if (modeName.empty() || modeName == "PatchBased" || modeName == "ADCcorrection")
-    return ADCorrectionMode::PatchBased;
+  if (modeName.empty() || modeName == "None")
+    return ADCorrectionMode::None;
   if (modeName == "AvgRefLine")
     return ADCorrectionMode::AvgRefLine;
   if (modeName == "FixRefLine")
@@ -107,28 +105,11 @@ std::map<ADCorrectionMode, std::string> &PathMapForSource(CorrectionSource sourc
   return gCorrectionROOTPathByMode;
 }
 
-int GetPatchIndex(int drsStop)
-{
-  const int points[11] = {1, 94, 187, 280, 373, 466, 560, 653, 746, 839, 932};
-
-  int minDiff = std::abs(drsStop - points[0]);
-  int index = 0;
-
-  for (int i = 1; i < 11; ++i)
-  {
-    const int diff = std::abs(drsStop - points[i]);
-    if (minDiff > diff)
-    {
-      index = i;
-      minDiff = diff;
-    }
-  }
-
-  return index;
-}
-
 bool EnsureCorrectionLoaded()
 {
+  if (gCorrectionMode == ADCorrectionMode::None)
+    return false;
+
   if (gCorrectionLoaded)
     return true;
 
@@ -153,13 +134,13 @@ bool EnsureCorrectionLoaded()
 
 const std::vector<double> *GetCorrectionFactorsForCurrentMode(const TString &name, int drsStop, int forcedPatchIndex)
 {
+  (void)drsStop;
+  (void)forcedPatchIndex;
+
   switch (gCorrectionMode)
   {
-  case ADCorrectionMode::PatchBased:
-  {
-    const int patchIndex = (forcedPatchIndex >= 0) ? forcedPatchIndex : GetPatchIndex(drsStop);
-    return TBcid::GetCachedCorrectionPtr(name, patchIndex);
-  }
+  case ADCorrectionMode::None:
+    return nullptr;
   case ADCorrectionMode::AvgRefLine:
     return TBcid::GetCachedCorrectionPtr(Form("%s-mean", name.Data()));
   case ADCorrectionMode::FixRefLine:
@@ -178,6 +159,9 @@ std::vector<ValueT> BuildADCcorrectedWaveformImpl(const std::vector<short> &wave
   std::vector<ValueT> result(waveform.begin(), waveform.end());
 
   if (!IsModuleTowerSCName(name))
+    return result;
+
+  if (gCorrectionMode == ADCorrectionMode::None)
     return result;
 
   EnsureCorrectionLoaded();
@@ -226,7 +210,8 @@ std::vector<double> BuildADCcorrectedWaveform(const std::vector<short> &waveform
 
 void TBwaveform::SetCorrectionCSVPath(const std::string &csvPath)
 {
-  gCorrectionCSVPathByMode[ADCorrectionMode::PatchBased] = csvPath;
+  gCorrectionCSVPathByMode[ADCorrectionMode::AvgRefLine] = csvPath;
+  gCorrectionCSVPathByMode[ADCorrectionMode::FixRefLine] = csvPath;
   gCorrectionLoaded = false;
 }
 

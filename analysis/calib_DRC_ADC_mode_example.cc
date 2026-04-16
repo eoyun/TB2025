@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
         isKEK = (std::stoi(argv[3]) != 0);
 
     const std::string mappingPath = isKEK ? "../mapping/mapping_KEK_v1.root" : "../mapping/mapping_TB2025_v1.root";
-    const std::string correctionMode = (argc > 4) ? argv[4] : "FixRefLine";
+    const std::string correctionMode = (argc > 4) ? argv[4] : "None";
     const std::string correctionCSVPath = (argc > 5)
                                               ? argv[5]
                                               : (isKEK ? "../kek_mean.csv" : "../correction_entire.csv");
