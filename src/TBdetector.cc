@@ -39,6 +39,15 @@ bool EndsWith(const std::string &value, const std::string &suffix)
 
 bool IsCorrectionChannelRow(const std::string &rowName)
 {
+  TString trimmed(rowName.c_str());
+  if (trimmed.EndsWith("_mean"))
+    trimmed.Resize(trimmed.Length() - 5);
+  else if (trimmed.EndsWith("-mean"))
+    trimmed.Resize(trimmed.Length() - 5);
+
+  if (TBdetector::IsCorrectionChannelName(trimmed))
+    return true;
+
   if (rowName.find("_S_") != std::string::npos || rowName.find("_C_") != std::string::npos)
     return true;
 
@@ -323,4 +332,41 @@ int TBdetector::column() const
 {
   uint64_t val64 = id_ & 0x000000000000FFFF;
   return static_cast<int>(val64);
+}
+
+TBdetector::correction_channel_family TBdetector::ParseCorrectionChannelFamily(const TString &name)
+{
+  auto parseRange = [](const TString &input, const char *prefix, int min, int max) {
+    if (!input.BeginsWith(prefix))
+      return false;
+
+    TString number = input;
+    number.Remove(0, TString(prefix).Length());
+
+    if (number.IsNull() || !number.IsDigit())
+      return false;
+
+    const int value = number.Atoi();
+    return value >= min && value <= max;
+  };
+
+  if ((name.BeginsWith("M") && name.Contains("-T") && (name.EndsWith("-S") || name.EndsWith("-C"))) ||
+      (name.BeginsWith("T") && (name.EndsWith("-S") || name.EndsWith("-C"))))
+    return correction_channel_family::ModuleTower;
+
+  if (parseRange(name, "LC", 1, 20))
+    return correction_channel_family::LC;
+
+  if (parseRange(name, "S", 1, 64))
+    return correction_channel_family::S;
+
+  if (parseRange(name, "C", 1, 64))
+    return correction_channel_family::C;
+
+  return correction_channel_family::Invalid;
+}
+
+bool TBdetector::IsCorrectionChannelName(const TString &name)
+{
+  return ParseCorrectionChannelFamily(name) != correction_channel_family::Invalid;
 }

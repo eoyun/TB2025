@@ -47,6 +47,15 @@ private:
 class TBdetector
 {
 public:
+  enum class correction_channel_family
+  {
+    Invalid = 0,
+    ModuleTower,
+    S,
+    C,
+    LC
+  };
+
   enum detid
   {
     nulldet = -1,
@@ -89,6 +98,9 @@ public:
   bool isCeren() const;
   int row() const;
   int column() const;
+
+  static correction_channel_family ParseCorrectionChannelFamily(const TString &name);
+  static bool IsCorrectionChannelName(const TString &name);
 
 private:
   detid det_;
