@@ -38,8 +38,7 @@ bool gCorrectionLoaded = false;
 
 bool IsModuleTowerSCName(const TString &name)
 {
-  return (name.BeginsWith("M") && name.Contains("-T") && (name.EndsWith("-S") || name.EndsWith("-C"))) ||
-         (name.BeginsWith("T") && (name.EndsWith("-S") || name.EndsWith("-C")));
+  return TBdetector::IsCorrectionChannelName(name);
 }
 
 const char *ModeToName(ADCorrectionMode mode)
